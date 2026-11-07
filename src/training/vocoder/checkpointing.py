@@ -6,7 +6,7 @@ from typing import Any
 
 import torch
 
-from src.config.vocoder_config import VocoderExperimentConfig
+from vocoder.src.nes_vocoder.config.schema import VocoderExperimentConfig
 from src.training.vocoder.context import (
     TrainingComponents,
     TrainingState,

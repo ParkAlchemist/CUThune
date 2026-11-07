@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 from torch.nn.utils import parametrize
 
-from src.config.vocoder_config import (
+from vocoder.src.nes_vocoder.config.schema import (
     MultiPeriodDiscriminatorConfig,
     MultiResolutionDiscriminatorConfig,
     MultiScaleDiscriminatorConfig,

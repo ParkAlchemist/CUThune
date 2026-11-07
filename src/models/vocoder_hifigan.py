@@ -9,7 +9,7 @@ from torch.nn.utils import remove_weight_norm
 from torch.nn.utils.parametrizations import weight_norm
 
 
-from src.config.vocoder_config import (
+from vocoder.src.nes_vocoder.config.schema import (
     VocoderGeneratorModelConfig,
     ActivationType, SnakeBetaConfig, AliasFreeConfig,
 )

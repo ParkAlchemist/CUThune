@@ -9,7 +9,7 @@ from torch.nn import functional as F
 
 from nnAudio.features import CQT1992v2
 
-from src.config.vocoder_config import CQTConsistencyLossConfig
+from vocoder.src.nes_vocoder.config.schema import CQTConsistencyLossConfig
 
 
 @dataclass(frozen=True)

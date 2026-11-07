@@ -1,8 +1,7 @@
 import pytest
 import torch
-import torch.nn as nn
 
-from src.config.vocoder_config import VocoderGeneratorModelConfig
+from vocoder.src.nes_vocoder.config.schema import VocoderGeneratorModelConfig
 from src.models.blocks.channel_attention import (
     ECABlock1d,
     ECABlock2d,

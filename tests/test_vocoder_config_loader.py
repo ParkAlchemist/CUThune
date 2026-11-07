@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from src.config.vocoder_config_loader import (
+from vocoder.src.nes_vocoder.config.loader import (
     ConfigError,
     load_vocoder_config,
 )

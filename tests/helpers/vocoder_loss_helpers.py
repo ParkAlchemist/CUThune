@@ -4,7 +4,7 @@ from collections.abc import Mapping
 
 import torch
 
-from src.config.vocoder_config import (
+from vocoder.src.nes_vocoder.config.schema import (
     FeatureMatchingLossConfig,
     MRSTFTConfig,
     TemporalGradientLossConfig,
@@ -15,15 +15,13 @@ from src.losses.vocoder.rail_occupancy_loss import MultiScaleRailOccupancyLoss, 
     RailOccupancyScaleLossOutput
 from src.losses.vocoder_losses import WeightedLossComponent, FamilyDiscriminatorLossOutput, VocoderGeneratorLossOutput, \
     make_weighted_loss_component
-from src.losses.vocoder.adversarial_loss import family_balanced_generator_adversarial_loss
-from src.losses.vocoder.feature_matching_loss import FamilyLossOutput, family_balanced_feature_matching_loss
+from src.losses.vocoder.feature_matching_loss import FamilyLossOutput
 from src.losses.vocoder.dc_offset_loss import DCOffsetScaleLossOutput, MultiScaleDCOffsetLossOutput
-from src.losses.vocoder.temporal_gradient_loss import MultiScaleSlewEnvelopeLossOutput, MultiScaleTemporalGradientLoss
-from src.losses.vocoder.spectral_flatness_loss import SpectralFlatnessBandLossOutput, SubBandSpectralFlatnessLossOutput, \
+from src.losses.vocoder.temporal_gradient_loss import MultiScaleSlewEnvelopeLossOutput
+from src.losses.vocoder.spectral_flatness_loss import SubBandSpectralFlatnessLossOutput, \
     SubBandSpectralFlatnessLoss
 from src.losses.vocoder.band_power_loss import MultiResolutionBandPowerLossOutput
-from src.losses.vocoder.rms_envelope_loss import RMSEnvelopeScaleLossOutput, MultiScaleRMSEnvelopeLossOutput, \
-    MultiScaleRMSEnvelopeLoss
+from src.losses.vocoder.rms_envelope_loss import RMSEnvelopeScaleLossOutput, MultiScaleRMSEnvelopeLossOutput
 from src.losses.vocoder.mrstft_loss import STFTResolutionLossOutput, MultiResolutionSTFTLossOutput
 
 

@@ -1,4 +1,4 @@
-from src.config.vocoder_config import VocoderExperimentConfig
+from vocoder.src.nes_vocoder.config.schema import VocoderExperimentConfig
 
 
 def test_default_vocoder_experiment_config():

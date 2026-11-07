@@ -2,7 +2,7 @@ import pytest
 import torch
 from torch import nn
 
-from src.config.vocoder_config import ContextAttentionConfig
+from vocoder.src.nes_vocoder.config.schema import ContextAttentionConfig
 from src.models.blocks.convnext_context import ConvNeXtContextTrunk1d
 from src.models.blocks.temporal_attention import (
     RotaryPositionEmbedding,

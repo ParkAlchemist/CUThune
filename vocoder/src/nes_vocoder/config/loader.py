@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import MISSING, fields, is_dataclass
+from dataclasses import fields, is_dataclass
 from pathlib import Path
 from types import UnionType
 from typing import Any, Literal, TypeVar, Union, get_args, get_origin, get_type_hints
 import tomllib
 
-from src.config.vocoder_config import (
+from vocoder.src.nes_vocoder.config.schema import (
     AMPConfig,
     AugmentationConfig,
     ControlConfig,
@@ -515,7 +515,7 @@ def load_vocoder_config(
         ),
     )
 
-    from src.config.vocoder_config_validator import (
+    from vocoder.src.nes_vocoder.config.validator import (
         validate_vocoder_config,
     )
 

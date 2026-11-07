@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import torch
 import torch.nn as nn
 
-from src.config.vocoder_config import VocoderLossConfig
+from vocoder.src.nes_vocoder.config.schema import VocoderLossConfig
 from src.losses.vocoder.adversarial_loss import family_balanced_generator_adversarial_loss
 from src.losses.vocoder.band_power_loss import MultiResolutionBandPowerLoss, MultiResolutionBandPowerLossOutput
 from src.losses.vocoder.cqt_consistency_loss import CQTLogMagnitudeLoss, CQTConsistencyLossOutput
@@ -13,7 +13,7 @@ from src.losses.vocoder.dc_offset_loss import MultiScaleDCOffsetLoss, MultiScale
 from src.losses.vocoder.feature_matching_loss import DISCRIMINATOR_FAMILIES, mean_enabled_families, \
     family_balanced_feature_matching_loss
 from src.losses.vocoder.mrstft_loss import MultiResolutionSTFTLoss, MultiResolutionSTFTLossOutput
-from src.losses.vocoder.rail_occupancy_loss import RailOccupancyScaleLossOutput, MultiScaleRailOccupancyLoss, \
+from src.losses.vocoder.rail_occupancy_loss import MultiScaleRailOccupancyLoss, \
     MultiScaleRailOccupancyLossOutput
 from src.losses.vocoder.rms_envelope_loss import MultiScaleRMSEnvelopeLoss, MultiScaleRMSEnvelopeLossOutput
 from src.losses.vocoder.spectral_flatness_loss import SubBandSpectralFlatnessLoss, SubBandSpectralFlatnessLossOutput

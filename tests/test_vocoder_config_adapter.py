@@ -3,8 +3,8 @@ import torch
 from src.models.vocoder_hifigan import CQTUHiFiGANGenerator
 
 
-from src.config.vocoder_config import VocoderExperimentConfig
-from src.config.vocoder_config_adapter import (
+from vocoder.src.nes_vocoder.config.schema import VocoderExperimentConfig
+from vocoder.src.nes_vocoder.config.adapter import (
     build_generator_config,
     build_loss_config,
 )

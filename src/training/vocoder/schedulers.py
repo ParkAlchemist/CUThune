@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import torch
 
-from src.config.vocoder_config import SchedulerConfig
+from vocoder.src.nes_vocoder.config.schema import SchedulerConfig
 from src.training.vocoder.context import TrainingComponents
 
 

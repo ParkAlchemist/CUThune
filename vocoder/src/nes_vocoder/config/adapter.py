@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.config.vocoder_config import VocoderExperimentConfig, VocoderGeneratorModelConfig, MRSTFTConfig, \
+from vocoder.src.nes_vocoder.config.schema import VocoderExperimentConfig, VocoderGeneratorModelConfig, MRSTFTConfig, \
     VocoderLossConfig, TemporalGradientLossConfig, FeatureMatchingLossConfig, RMSEnvelopeLossConfig, \
     BandPowerLossConfig, SpectralFlatnessLossConfig, DCOffsetLossConfig, CQTConsistencyLossConfig, CQTAnalysisConfig, \
     RailOccupancyLossConfig

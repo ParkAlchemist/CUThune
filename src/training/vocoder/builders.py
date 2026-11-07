@@ -4,12 +4,12 @@ import math
 
 import torch
 
-from src.config.vocoder_config import (
+from vocoder.src.nes_vocoder.config.schema import (
     OptimizerConfig,
     SchedulerConfig,
     VocoderExperimentConfig,
 )
-from src.config.vocoder_config_adapter import build_loss_config
+from vocoder.src.nes_vocoder.config.adapter import build_loss_config
 from src.losses.vocoder_losses import VocoderLossBundle
 from src.models.vocoder_discriminators import (
     HiFiGANMultiDiscriminator,

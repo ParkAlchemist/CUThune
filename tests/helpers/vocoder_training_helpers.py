@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from src.config.vocoder_config import (
+from vocoder.src.nes_vocoder.config.schema import (
     FeatureMatchingLossConfig,
     MRSTFTConfig,
     TemporalGradientLossConfig,

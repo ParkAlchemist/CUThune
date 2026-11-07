@@ -7,7 +7,7 @@ import torch
 from torch import nn as nn
 from torch.nn import functional as F
 
-from src.config.vocoder_config import BandPowerLossConfig
+from vocoder.src.nes_vocoder.config.schema import BandPowerLossConfig
 
 
 @dataclass(frozen=True)

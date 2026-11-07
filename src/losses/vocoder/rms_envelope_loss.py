@@ -6,7 +6,7 @@ import torch
 from torch import nn as nn
 from torch.nn import functional as F
 
-from src.config.vocoder_config import RMSEnvelopeLossConfig
+from vocoder.src.nes_vocoder.config.schema import RMSEnvelopeLossConfig
 
 
 @dataclass(frozen=True)

@@ -1,7 +1,7 @@
 import pytest
 
-from src.config.vocoder_config import VocoderExperimentConfig
-from src.config.vocoder_config_validator import (
+from vocoder.src.nes_vocoder.config.schema import VocoderExperimentConfig
+from vocoder.src.nes_vocoder.config.validator import (
     ConfigValidationError,
     validate_vocoder_config,
 )

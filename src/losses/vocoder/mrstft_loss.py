@@ -7,7 +7,7 @@ import torch
 from torch import nn as nn
 from torch.nn import functional as F
 
-from src.config.vocoder_config import MRSTFTConfig
+from vocoder.src.nes_vocoder.config.schema import MRSTFTConfig
 
 
 @dataclass(frozen=True)

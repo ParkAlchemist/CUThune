@@ -2,7 +2,7 @@ from pathlib import Path
 from collections import Counter
 import sys
 
-from src.config import config
+from vocoder.src.nes_vocoder.config import config
 from src.data.audio_utils import list_audio_files
 
 

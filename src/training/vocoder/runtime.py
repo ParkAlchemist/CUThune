@@ -7,7 +7,7 @@ import signal
 import numpy as np
 import torch
 
-from src.config.vocoder_config import (
+from vocoder.src.nes_vocoder.config.schema import (
     ControlConfig,
     VocoderExperimentConfig,
 )

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import torch
 from torch import nn
 
-from src.config.vocoder_config import RailOccupancyLossConfig
+from vocoder.src.nes_vocoder.config.schema import RailOccupancyLossConfig
 
 
 @dataclass(frozen=True)

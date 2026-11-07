@@ -7,10 +7,10 @@ import sys
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.config.vocoder_config_loader import (
+from vocoder.src.nes_vocoder.config.loader import (
     load_vocoder_config,
 )
-from src.config.vocoder_config_validator import (
+from vocoder.src.nes_vocoder.config.validator import (
     validate_vocoder_config,
 )
 from src.training.vocoder.checkpointing import (

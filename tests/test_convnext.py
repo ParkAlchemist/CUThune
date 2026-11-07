@@ -2,7 +2,7 @@ import pytest
 import torch
 from torch import nn
 
-from src.config.vocoder_config import VocoderGeneratorModelConfig
+from vocoder.src.nes_vocoder.config.schema import VocoderGeneratorModelConfig
 
 from src.models.blocks.convnext_context import (
     ConvNeXtContextBlock1d,

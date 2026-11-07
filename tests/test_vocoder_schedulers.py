@@ -2,7 +2,7 @@ import pytest
 import torch
 
 
-from src.config.vocoder_config import SchedulerConfig
+from vocoder.src.nes_vocoder.config.schema import SchedulerConfig
 from src.training.vocoder.builders import build_scheduler, build_fixed_floor_cosine_scheduler
 from src.training.vocoder.schedulers import step_scheduler
 

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import torch
 from torch import nn as nn
 
-from src.config.vocoder_config import SpectralFlatnessLossConfig
+from vocoder.src.nes_vocoder.config.schema import SpectralFlatnessLossConfig
 
 
 @dataclass(frozen=True)

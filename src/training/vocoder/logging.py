@@ -12,7 +12,7 @@ import time
 import torch
 import torch.nn as nn
 
-from src.config.vocoder_config import VocoderExperimentConfig
+from vocoder.src.nes_vocoder.config.schema import VocoderExperimentConfig
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

@@ -9,7 +9,7 @@ from torch.nn.utils import parametrize
 from torch.nn.utils.parametrizations import weight_norm, spectral_norm
 
 
-from src.config.vocoder_config import (
+from vocoder.src.nes_vocoder.config.schema import (
     NormType,
     PeriodDiscriminatorConfig,
     MultiPeriodDiscriminatorConfig,

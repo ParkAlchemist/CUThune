@@ -14,14 +14,12 @@ TRAIN_SCRIPT = PROJECT_ROOT / "scripts" / "train" / "train_vocoder.py"
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.training.checkpoint_paths import (
-    extract_numbered_checkpoint_value,
-    find_latest_numbered_checkpoint,
     resolve_checkpoint_selector,
 )
 
-from src.utils.config_launch import resolve_project_path, run_command
+from src.utils.config_launch import resolve_project_path
 
-from src.config.vocoder_config_loader import load_vocoder_config
+from vocoder.src.nes_vocoder.config.loader import load_vocoder_config
 
 
 def parse_args() -> tuple[argparse.Namespace, list[str]]:

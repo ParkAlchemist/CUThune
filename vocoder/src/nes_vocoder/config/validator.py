@@ -6,7 +6,7 @@ from typing import Iterable
 
 import librosa
 
-from src.config.vocoder_config import (
+from vocoder.src.nes_vocoder.config.schema import (
     MRSTFTConfig,
     OptimizerConfig,
     SchedulerConfig,
