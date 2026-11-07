@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import nullcontext
 from dataclasses import dataclass
 
 import torch
@@ -17,6 +18,9 @@ class BandPowerResolutionLossOutput:
 
     absolute: torch.Tensor
     shape: torch.Tensor
+
+    activity_mean: torch.Tensor
+    floor_activation_fraction: torch.Tensor
 
     absolute_weight: float
     shape_weight: float
@@ -238,8 +242,39 @@ class SingleResolutionBandPowerLoss(
         absolute_weight: float,
         shape_weight: float,
         eps: float,
+        energy_floor: float = 1e-4,
     ) -> None:
         super().__init__()
+
+        if fft_size <= 0:
+            raise ValueError(
+                "fft_size must be positive."
+            )
+
+        if hop_size <= 0:
+            raise ValueError(
+                "hop_size must be positive."
+            )
+
+        if win_length <= 0:
+            raise ValueError(
+                "win_length must be positive."
+            )
+
+        if absolute_weight < 0.0:
+            raise ValueError(
+                "absolute_weight must be non-negative."
+            )
+
+        if shape_weight < 0.0:
+            raise ValueError(
+                "shape_weight must be non-negative."
+            )
+
+        if eps <= 0.0:
+            raise ValueError(
+                "eps must be positive."
+            )
 
         if win_length > fft_size:
             raise ValueError(
@@ -257,6 +292,16 @@ class SingleResolutionBandPowerLoss(
         )
         self.shape_weight = shape_weight
         self.eps = eps
+
+        if energy_floor <= 0.0:
+            raise ValueError(
+                "energy_floor must be positive, "
+                f"got {energy_floor}."
+            )
+
+        self.energy_floor = float(
+            energy_floor
+        )
 
         self.register_buffer(
             "window",
@@ -281,9 +326,21 @@ class SingleResolutionBandPowerLoss(
             persistent=False,
         )
 
+        self.register_buffer(
+            "power_normalization",
+            (
+                    torch.tensor(
+                        float(self.fft_size),
+                        dtype=torch.float32,
+                    )
+                    * self.window.square().sum()
+            ),
+            persistent=False,
+        )
+
     def _band_power(
-        self,
-        waveform: torch.Tensor,
+            self,
+            waveform: torch.Tensor,
     ) -> torch.Tensor:
         if waveform.ndim != 3:
             raise ValueError(
@@ -295,42 +352,58 @@ class SingleResolutionBandPowerLoss(
             waveform.shape
         )
 
-        flattened = waveform.reshape(
-            batch * channels,
-            time,
+        autocast_context = (
+            torch.amp.autocast(
+                device_type="cuda",
+                enabled=False,
+            )
+            if waveform.is_cuda
+            else nullcontext()
         )
 
-        window = self.window.to(
-            device=waveform.device,
-            dtype=waveform.dtype,
-        )
+        with autocast_context:
+            flattened = (
+                waveform
+                .float()
+                .reshape(
+                    batch * channels,
+                    time,
+                )
+            )
 
-        spectrum = torch.stft(
-            flattened,
-            n_fft=self.fft_size,
-            hop_length=self.hop_size,
-            win_length=self.win_length,
-            window=window,
-            center=True,
-            pad_mode="reflect",
-            normalized=False,
-            onesided=True,
-            return_complex=True,
-        )
+            window = self.window.to(
+                device=flattened.device,
+                dtype=torch.float32,
+            )
 
-        power = spectrum.abs().square()
+            spectrum = torch.stft(
+                flattened,
+                n_fft=self.fft_size,
+                hop_length=self.hop_size,
+                win_length=self.win_length,
+                window=window,
+                center=True,
+                pad_mode="reflect",
+                normalized=False,
+                onesided=True,
+                return_complex=True,
+            )
 
-        power = power.reshape(
-            batch,
-            channels,
-            power.shape[-2],
-            power.shape[-1],
-        )
+            power = spectrum.abs().square()
 
-        return project_power_to_bands(
-            power,
-            self.filterbank,
-        )
+            power = power.reshape(
+                batch,
+                channels,
+                power.shape[-2],
+                power.shape[-1],
+            )
+
+            band_power = project_power_to_bands(
+                power,
+                self.filterbank,
+            )
+
+        return band_power
 
     def forward(
         self,
@@ -354,11 +427,15 @@ class SingleResolutionBandPowerLoss(
         )
 
         prediction_log_power = torch.log(
-            prediction_power + self.eps
+            prediction_power.clamp_min(
+                self.eps
+            )
         )
 
         target_log_power = torch.log(
-            target_power + self.eps
+            target_power.clamp_min(
+                self.eps
+            )
         )
 
         absolute_loss = F.l1_loss(
@@ -367,33 +444,67 @@ class SingleResolutionBandPowerLoss(
             reduction="mean",
         )
 
-        prediction_distribution = (
-            prediction_power
-            / prediction_power.sum(
+        prediction_total_power = (
+            prediction_power.sum(
                 dim=-2,
                 keepdim=True,
-            ).clamp_min(self.eps)
+            )
+        )
+
+        target_total_power = (
+            target_power.sum(
+                dim=-2,
+                keepdim=True,
+            )
+        )
+
+        prediction_distribution = (
+                prediction_power
+                / prediction_total_power.clamp_min(
+            self.eps
+        )
         )
 
         target_distribution = (
-            target_power
-            / target_power.sum(
-                dim=-2,
-                keepdim=True,
-            ).clamp_min(self.eps)
+                target_power
+                / target_total_power.clamp_min(
+            self.eps
+        )
         )
 
-        shape_loss = F.l1_loss(
-            torch.log(
-                prediction_distribution
-                + self.eps
-            ),
-            torch.log(
-                target_distribution
-                + self.eps
-            ),
-            reduction="mean",
+        shape_error = (
+                torch.log(
+                    prediction_distribution
+                    + self.eps
+                )
+                - torch.log(
+            target_distribution
+            + self.eps
         )
+        ).abs().mean(
+            dim=-2,
+        )
+
+        power_normalization = self.power_normalization.to(device=target_power.device, dtype=target_power.dtype)
+
+        target_activity = target_total_power.detach().squeeze(-2) / power_normalization.clamp_min(self.eps)
+
+        activity_weight = (
+                target_activity
+                / (
+                        target_activity
+                        + self.energy_floor
+                )
+        )
+
+        shape_loss = (
+                shape_error
+                * activity_weight
+        ).mean()
+
+        activity_mean = activity_weight.detach().mean()
+
+        floor_activation_fraction = (target_activity < self.energy_floor).float().detach().mean()
 
         return BandPowerResolutionLossOutput(
             fft_size=self.fft_size,
@@ -405,6 +516,8 @@ class SingleResolutionBandPowerLoss(
                 self.absolute_weight
             ),
             shape_weight=self.shape_weight,
+            activity_mean=activity_mean,
+            floor_activation_fraction=floor_activation_fraction,
         )
 
 
@@ -447,6 +560,7 @@ class MultiResolutionBandPowerLoss(
                         config.shape_weight
                     ),
                     eps=config.eps,
+                    energy_floor=config.energy_floor,
                 )
                 for (
                     fft_size,

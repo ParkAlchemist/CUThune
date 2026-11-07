@@ -171,6 +171,18 @@ def generator_loss_metrics(
             .cpu()
         )
 
+        metrics[f"{prefix}/reference_norm_mean"] = float(
+            resolution.reference_norm_mean.detach().cpu()
+        )
+
+        metrics[f"{prefix}/activity_mean"] = float(
+            resolution.activity_mean.detach().cpu()
+        )
+
+        metrics[f"{prefix}/floor_activation_fraction"] = float(
+            resolution.floor_activation_fraction.detach().cpu()
+        )
+
     if (
             output.temporal_gradient_output
             is not None
@@ -261,6 +273,14 @@ def generator_loss_metrics(
                 resolution.total.detach().cpu()
             )
 
+            metrics[f"{prefix}/activity_mean"] = float(
+                resolution.activity_mean.detach().cpu()
+            )
+
+            metrics[f"{prefix}/floor_activation_fraction"] = float(
+                resolution.floor_activation_fraction.detach().cpu()
+            )
+
     if output.spectral_flatness_output is not None:
         for band_index, band in enumerate(
                 output
@@ -302,6 +322,10 @@ def generator_loss_metrics(
                 band.activity_fraction
                 .detach()
                 .cpu()
+            )
+
+            metrics[f"{prefix}/floor_activation_fraction"] = float(
+                band.floor_activation_fraction.detach().cpu()
             )
 
     if output.dc_offset_output is not None:

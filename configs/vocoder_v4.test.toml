@@ -140,16 +140,16 @@ magnitude_compression = "log1p"
 
 [loss]
 lambda_adversarial = 1.0
-lambda_feature_matching = 0.5
-lambda_mrstft = 0.4
+lambda_feature_matching = 0.0
+lambda_mrstft = 0.0
 lambda_waveform = 0.0
 lambda_temporal_gradient = 6.0
 lambda_rms_envelope = 2.0
-lambda_band_power = 0.15
-lambda_spectral_flatness = 0.05
+lambda_band_power = 0.0
+lambda_spectral_flatness = 0.0
 lambda_dc_offset = 0.05
 lambda_cqt = 0.0
-lambda_rail_occupancy = 0.0
+lambda_rail_occupancy = 0.23
 
 [loss.mrstft]
 fft_sizes = [128, 256, 512, 1024, 2048]
@@ -158,6 +158,7 @@ win_lengths = [128, 256, 512, 1024, 2048]
 spectral_convergence_weight = 1.0
 log_magnitude_weight = 1.0
 eps = 1e-5
+reference_floor = 1.0
 
 [loss.feature_matching]
 normalization = "real_rms"
@@ -197,6 +198,7 @@ absolute_weight = 1.0
 shape_weight = 0.5
 
 eps = 1e-8
+energy_floor = 1e-4
 
 [loss.dc_offset]
 enabled = true
@@ -217,7 +219,7 @@ band_edges = [
     22050.0,
 ]
 
-energy_floor = 1e-4
+energy_floor = 1e-5
 minimum_bins_per_band = 4
 eps = 1e-8
 

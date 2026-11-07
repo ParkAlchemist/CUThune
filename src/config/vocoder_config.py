@@ -103,6 +103,7 @@ class MRSTFTConfig:
     spectral_convergence_weight: float = 1.0
     log_magnitude_weight: float = 1.0
     eps: float = 1e-7
+    reference_floor: float = 1.0
 
 
 @dataclass
@@ -182,6 +183,7 @@ class BandPowerLossConfig:
     shape_weight: float = 1.0
 
     eps: float = 1e-8
+    energy_floor: float = 1e-4
 
 
 @dataclass
@@ -200,7 +202,7 @@ class SpectralFlatnessLossConfig:
         11025.0,
     )
 
-    energy_floor: float = 1e-4
+    energy_floor: float = 1e-5
     minimum_bins_per_band: int = 4
     eps: float = 1e-8
 

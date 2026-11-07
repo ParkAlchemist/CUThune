@@ -81,7 +81,7 @@ class CQTLogMagnitudeLoss(nn.Module):
         )
 
         for parameter in self.cqt.parameters():
-            parameter.requires_grad(False)
+            parameter.requires_grad_(False)
 
     @staticmethod
     def _validate_waveform(
@@ -117,6 +117,11 @@ class CQTLogMagnitudeLoss(nn.Module):
         if torch.is_complex(magnitude):
             magnitude = magnitude.abs()
 
+        if not torch.isfinite(magnitude).all():
+            raise RuntimeError(
+                "CQT magnitude contains non-finite values."
+            )
+
         if magnitude.ndim != 3:
             raise RuntimeError(
                 "Expected CQT magnitude [B, F, T], "
@@ -139,8 +144,14 @@ class CQTLogMagnitudeLoss(nn.Module):
         self._validate_waveform(prediction, name="prediction")
         self._validate_waveform(target, name="target")
 
-        autocast_context = torch.amp.autocast(device_type="cuda", enabled=False) \
-            if prediction.is_cuda else nullcontext()
+        autocast_context = (
+            torch.amp.autocast(
+                device_type="cuda",
+                enabled=False,
+            )
+            if prediction.is_cuda
+            else nullcontext()
+        )
 
         with autocast_context:
             prediction_magnitude = self._magnitude_cqt(prediction)
@@ -154,14 +165,14 @@ class CQTLogMagnitudeLoss(nn.Module):
                     f"{tuple(prediction_magnitude.shape)} != {tuple(target_magnitude.shape)}"
                 )
 
-            prediction_log_magnitude = torch.log(prediction_magnitude).clamp_min(self.eps)
-            target_log_magnitude = torch.log(target_magnitude).clamp_min(self.eps)
+            prediction_log_magnitude = torch.log(prediction_magnitude.clamp_min(self.eps))
+            target_log_magnitude = torch.log(target_magnitude.clamp_min(self.eps))
 
             log_magnitude_loss = F.l1_loss(prediction_log_magnitude, target_log_magnitude, reduction="mean")
 
         return CQTConsistencyLossOutput(
             total=log_magnitude_loss,
             log_magnitude=log_magnitude_loss,
-            prediction_log_magnitude_mean=prediction_magnitude.detach().mean(),
-            target_log_magnitude_mean = target_magnitude.detach().mean(),
+            prediction_log_magnitude_mean=prediction_log_magnitude.detach().mean(),
+            target_log_magnitude_mean = target_log_magnitude.detach().mean(),
         )

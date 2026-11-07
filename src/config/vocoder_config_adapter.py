@@ -45,6 +45,7 @@ def build_mrstft_config(
         ),
         log_magnitude_weight=source.log_magnitude_weight,
         eps=source.eps,
+        reference_floor=source.reference_floor,
     )
 
 
@@ -111,6 +112,7 @@ def build_band_power_loss_config(
         absolute_weight=source.absolute_weight,
         shape_weight=source.shape_weight,
         eps=source.eps,
+        energy_floor=source.energy_floor,
     )
 
 

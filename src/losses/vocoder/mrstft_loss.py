@@ -19,6 +19,10 @@ class STFTResolutionLossOutput:
     spectral_convergence: torch.Tensor
     log_magnitude: torch.Tensor
 
+    reference_norm_mean: torch.Tensor
+    activity_mean: torch.Tensor
+    floor_activation_fraction: torch.Tensor
+
     spectral_convergence_weight: float
     log_magnitude_weight: float
 
@@ -64,6 +68,7 @@ class SingleResolutionSTFTLoss(nn.Module):
         hop_size: int,
         win_length: int,
         eps: float = 1e-7,
+        reference_floor: float = 1.0,
     ) -> None:
         super().__init__()
 
@@ -71,6 +76,7 @@ class SingleResolutionSTFTLoss(nn.Module):
         self.hop_size = int(hop_size)
         self.win_length = int(win_length)
         self.eps = float(eps)
+        self.reference_floor = float(reference_floor)
 
         self.register_buffer(
             "window",
@@ -112,7 +118,7 @@ class SingleResolutionSTFTLoss(nn.Module):
                 return_complex=True,
             )
 
-            magnitude = torch.abs(stft).clamp_min(self.eps)
+            magnitude = torch.abs(stft)
 
         return magnitude
 
@@ -122,7 +128,7 @@ class SingleResolutionSTFTLoss(nn.Module):
             real_magnitude: torch.Tensor,
             *,
             reference_floor: float,
-    ) -> torch.Tensor:
+    ) -> tuple[torch.Tensor, ...]:
         if fake_magnitude.shape != real_magnitude.shape:
             raise ValueError(
                 "Fake and real magnitudes must have the same shape, "
@@ -152,35 +158,44 @@ class SingleResolutionSTFTLoss(nn.Module):
             dim=(-2, -1),
         )
 
-        relative_error = (difference_norm / reference_norm.clamp_min(reference_floor))
+        relative_error = (
+                difference_norm
+                / reference_norm.clamp_min(
+            reference_floor
+        )
+        )
 
-        activity_weight = (reference_norm.detach() / reference_floor).clamp(min=0.0, max=1.0)
+        activity_weight = (
+                reference_norm.detach()
+                / reference_floor
+        ).clamp(
+            min=0.0,
+            max=1.0,
+        )
 
-        weighted_error = relative_error * activity_weight
+        loss = (relative_error * activity_weight).mean()
+        reference_norm_mean = reference_norm.detach().mean()
+        activity_mean = activity_weight.detach().mean()
+        floor_activation_fraction = (reference_norm < reference_floor).float().detach().mean()
 
-        weight_sum = activity_weight.sum()
-
-        if weight_sum.item() == 0.0:
-            return difference_norm.sum() * 0.0
-
-        return weighted_error.sum() / weight_sum.clamp_min(1.0)
+        return loss, reference_norm_mean, activity_mean, floor_activation_fraction
 
     def forward(
             self,
             fake_audio: torch.Tensor,
             real_audio: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, ...]:
         fake_mag = self._stft_magnitude(fake_audio)
         real_mag = self._stft_magnitude(real_audio)
 
-        spectral_convergence = self._stft_spectral_convergence(fake_mag, real_mag, reference_floor=1.0)
+        spectral_convergence, reference_norm_mean, activity_mean, floor_activation_fraction = self._stft_spectral_convergence(fake_mag, real_mag, reference_floor=self.reference_floor)
 
         log_magnitude = F.l1_loss(
-            torch.log(fake_mag),
-            torch.log(real_mag),
+            torch.log(fake_mag.clamp_min(self.eps)),
+            torch.log(real_mag.clamp_min(self.eps)),
         )
 
-        return spectral_convergence, log_magnitude
+        return spectral_convergence, log_magnitude, reference_norm_mean, activity_mean, floor_activation_fraction
 
 
 class MultiResolutionSTFTLoss(nn.Module):
@@ -194,7 +209,7 @@ class MultiResolutionSTFTLoss(nn.Module):
 
     def __init__(
         self,
-        config: MRSTFTConfig = MRSTFTConfig(),
+        config: MRSTFTConfig,
     ) -> None:
         super().__init__()
 
@@ -241,7 +256,7 @@ class MultiResolutionSTFTLoss(nn.Module):
             self.config.win_lengths,
             self.losses
         ):
-            spectral_convergence, log_magnitude = loss_func(fake_audio, real_audio)
+            spectral_convergence, log_magnitude, reference_norm_mean, activity_mean, floor_activation_fraction = loss_func(fake_audio, real_audio)
 
             resolution_outputs.append(
                 STFTResolutionLossOutput(
@@ -252,6 +267,9 @@ class MultiResolutionSTFTLoss(nn.Module):
                     log_magnitude=log_magnitude,
                     spectral_convergence_weight=self.config.spectral_convergence_weight,
                     log_magnitude_weight=self.config.log_magnitude_weight,
+                    reference_norm_mean=reference_norm_mean,
+                    activity_mean=activity_mean,
+                    floor_activation_fraction=floor_activation_fraction,
                 )
             )
 

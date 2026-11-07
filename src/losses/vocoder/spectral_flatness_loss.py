@@ -20,6 +20,7 @@ class SpectralFlatnessBandLossOutput:
     prediction_log_flatness: torch.Tensor
 
     activity_fraction: torch.Tensor
+    floor_activation_fraction: torch.Tensor
 
 
 @dataclass(frozen=True)
@@ -164,6 +165,12 @@ class SubBandSpectralFlatnessLoss(
                 config.win_length,
                 dtype=torch.float32,
             ),
+            persistent=False,
+        )
+
+        self.register_buffer(
+            "window_energy",
+            self.window.square().sum(),
             persistent=False,
         )
 
@@ -356,21 +363,24 @@ class SubBandSpectralFlatnessLoss(
                 )
             )
 
-            target_band_energy = (
-                target_band.mean(
-                    dim=-2,
-                )
-            )
+            target_band_energy = target_band.mean(dim=-2)
 
             # Smooth target-derived activity gate.
             # Detaching prevents the gate from becoming
             # part of the optimization target.
+            window_energy = self.window_energy.to(
+                device=target_band.device,
+                dtype=target_band.dtype,
+            )
+
+            target_band_activity = target_band_energy.detach() / window_energy.clamp_min(self.config.eps)
+
             activity_weight = (
-                target_band_energy.detach()
-                / (
-                    target_band_energy.detach()
-                    + self.config.energy_floor
-                )
+                    target_band_activity
+                    / (
+                            target_band_activity
+                            + self.config.energy_floor
+                    )
             )
 
             absolute_error = (
@@ -381,10 +391,7 @@ class SubBandSpectralFlatnessLoss(
             band_loss = (
                 absolute_error
                 * activity_weight
-            ).sum() / (
-                activity_weight.sum()
-                .clamp_min(self.config.eps)
-            )
+            ).mean()
 
             lower = (
                 self.config.band_edges[
@@ -398,26 +405,27 @@ class SubBandSpectralFlatnessLoss(
                 ]
             )
 
+            diagnostic_denominator = activity_weight.sum().clamp_min(self.config.eps)
+
+            target_flatness_mean = (target_flatness.detach() * activity_weight).sum() / diagnostic_denominator
+
+            prediction_flatness_mean = (prediction_flatness.detach() * activity_weight).sum() / diagnostic_denominator
+
+            floor_activation_fraction = (target_band_activity < self.config.energy_floor).float().detach().mean()
+
             band_outputs.append(
                 SpectralFlatnessBandLossOutput(
                     lower_frequency=lower,
                     upper_frequency=upper,
                     loss=band_loss,
-                    target_log_flatness=(
-                        target_flatness
-                        .detach()
-                        .mean()
-                    ),
-                    prediction_log_flatness=(
-                        prediction_flatness
-                        .detach()
-                        .mean()
-                    ),
+                    target_log_flatness=target_flatness_mean,
+                    prediction_log_flatness=prediction_flatness_mean,
                     activity_fraction=(
                         activity_weight
                         .detach()
                         .mean()
                     ),
+                    floor_activation_fraction=floor_activation_fraction,
                 )
             )
 
