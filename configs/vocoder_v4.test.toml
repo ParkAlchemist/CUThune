@@ -53,7 +53,7 @@ upsample_kernel_size = 12
 downsample_kernel_size = 12
 
 [generator.eca]
-enabled = true
+enabled = false
 kernel_size = 0
 gamma = 2.0
 beta = 1.0
@@ -75,7 +75,7 @@ grn_eps = 1e-6
 
 [generator.context.attention]
 enabled = true
-placement = 2
+placement = 4
 number_of_heads = 8
 dropout = 0.0
 rope_base = 10000.0
@@ -139,15 +139,15 @@ eps = 1e-8
 magnitude_compression = "log1p"
 
 [loss]
-lambda_adversarial = 0.5
-lambda_feature_matching = 1.0
-lambda_mrstft = 0.5
+lambda_adversarial = 1.0
+lambda_feature_matching = 0.5
+lambda_mrstft = 0.4
 lambda_waveform = 0.0
-lambda_temporal_gradient = 0.0
-lambda_rms_envelope = 2.5
-lambda_band_power = 0.2
-lambda_spectral_flatness = 0.0
-lambda_dc_offset = 0.0
+lambda_temporal_gradient = 6.0
+lambda_rms_envelope = 2.0
+lambda_band_power = 0.15
+lambda_spectral_flatness = 0.05
+lambda_dc_offset = 0.05
 lambda_cqt = 0.0
 lambda_rail_occupancy = 0.0
 

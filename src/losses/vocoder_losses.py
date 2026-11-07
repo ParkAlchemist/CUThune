@@ -396,7 +396,7 @@ def compute_vocoder_generator_loss(
 
         loss_cqt_raw = fake_audio.new_zeros(())
     else:
-        cqt_output = loss_bundle.cqt_loss(
+        cqt_output = loss_bundle.cqt_consistency_loss(
             fake_audio,
             real_audio,
         )
