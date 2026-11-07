@@ -13,7 +13,7 @@ THIS_FILE = Path(__file__).resolve()
 PROJECT_ROOT = THIS_FILE.parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.data.cqt_feature_utils import (
+from shared.src.chiptune_shared.cqt.features import (
     load_audio,
     trim_silence,
     peak_normalize,

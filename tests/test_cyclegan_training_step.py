@@ -1,21 +1,19 @@
-from pathlib import Path
-
 import torch
 
 from tests.test_config import CACHE_ROOT
 
-from src.data.cqt_dataset import build_unpaired_cqt_dataloader
+from cut.src.nes_cut.data.unpaired_dataset import build_unpaired_cqt_dataloader
 from src.models.cyclegan import (
     GeneratorConfig,
     DiscriminatorConfig,
     AudioResnetGenerator,
     PatchGANDiscriminator,
 )
-from src.losses.cyclegan_losses import (
+from vocoder.src.nes_vocoder.models.src.losses.cyclegan_losses import (
     CycleGANLossConfig,
     build_cyclegan_loss_bundle,
 )
-from src.training.cyclegan_step import (
+from vocoder.src.nes_vocoder.models.src.training.cyclegan_step import (
     CycleGANModels,
     CycleGANOptimizers,
     cyclegan_train_step,

@@ -5,7 +5,7 @@ THIS_FILE = Path(__file__).resolve()
 PROJECT_ROOT = THIS_FILE.parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.data.cqt_dataset import build_unpaired_cqt_dataloader
+from cut.src.nes_cut.data.unpaired_dataset import build_unpaired_cqt_dataloader
 
 
 def main() -> None:

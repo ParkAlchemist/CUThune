@@ -5,8 +5,8 @@ from src.models.cyclegan import (
     split_resblocks_for_balanced_attention,
     build_bottleneck_layers,
 )
-from src.models.blocks.residual_block import ResidualBlock
-from src.models.blocks.spatial_self_attention import SpatialSelfAttention
+from src.models.blocks import ResidualBlock
+from src.models.blocks import SpatialSelfAttention
 
 
 def layer_names(layers):

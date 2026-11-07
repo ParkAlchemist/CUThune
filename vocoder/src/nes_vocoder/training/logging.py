@@ -16,16 +16,16 @@ from vocoder.src.nes_vocoder.config.schema import VocoderExperimentConfig
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from src.training.vocoder.context import (
+    from src.training.vocoder import (
         RunPaths,
         TrainingState,
     )
-from src.models.blocks.convnext_context import (
+from src.models.blocks import (
     GlobalResponseNorm1d,
     MultiKernelConvNeXtContextBlock1d,
     ConvNeXtContextBlock1d,
 )
-from src.models.blocks.temporal_attention import (
+from src.models.blocks import (
     RoPETemporalSelfAttention1d,
 )
 

@@ -15,10 +15,10 @@ from vocoder.src.nes_vocoder.config.schema import (
     TemporalGradientLossConfig,
     VocoderLossConfig, RMSEnvelopeLossConfig, BandPowerLossConfig,
 )
-from src.losses.vocoder_losses import (
+from vocoder.src.nes_vocoder.models.src.losses import (
     VocoderLossBundle,
 )
-from src.training.vocoder_step import (
+from vocoder.src.nes_vocoder.training.step import (
     VocoderModels,
     VocoderOptimizers,
 )

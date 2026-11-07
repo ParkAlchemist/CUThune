@@ -1,13 +1,8 @@
 import torch
 
-from src.models.vocoder_hifigan import (
+from vocoder.src.nes_vocoder.models.generator import (
     VocoderGeneratorModelConfig,
     CQTUHiFiGANGenerator,
-)
-from src.models.vocoder_discriminators import (
-    HiFiGANMultiDiscriminator,
-    VocoderDiscriminatorConfig,
-    MultiPeriodDiscriminatorConfig,
 )
 
 

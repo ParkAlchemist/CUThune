@@ -8,7 +8,7 @@ from src.training.replay_buffer import ReplayBuffer
 import torch
 import torch.nn as nn
 
-from src.losses.cyclegan_losses import (
+from vocoder.src.nes_vocoder.models.src.losses.cyclegan_losses import (
     CycleGANLossBundle,
     compute_generator_losses,
     compute_discriminator_loss,

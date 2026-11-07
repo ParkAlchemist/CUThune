@@ -13,7 +13,7 @@ TRAIN_SCRIPT = PROJECT_ROOT / "scripts" / "train" / "train_vocoder.py"
 
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.training.checkpoint_paths import (
+from shared.src.chiptune_shared.experiment.checkpoint_paths import (
     resolve_checkpoint_selector,
 )
 
@@ -24,14 +24,14 @@ from vocoder.src.nes_vocoder.config.loader import load_vocoder_config
 
 def parse_args() -> tuple[argparse.Namespace, list[str]]:
     parser = argparse.ArgumentParser(
-        description="Resume vocoder training from a checkpoint."
+        description="Resume components training from a checkpoint."
     )
 
     parser.add_argument(
         "--config",
         type=Path,
         required=True,
-        help="Path to the vocoder experiment TOML file.",
+        help="Path to the components experiment TOML file.",
     )
 
     parser.add_argument(
@@ -155,7 +155,7 @@ def main() -> None:
 
     epoch, global_step = inspect_checkpoint(checkpoint_path)
 
-    print("Resuming vocoder from checkpoint:")
+    print("Resuming components from checkpoint:")
     print(checkpoint_path)
 
     if epoch is not None or global_step is not None:

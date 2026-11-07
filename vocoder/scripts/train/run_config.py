@@ -18,14 +18,14 @@ from src.utils.config_launch import (
 
 def parse_args() -> tuple[argparse.Namespace, list[str]]:
     parser = argparse.ArgumentParser(
-        description="Launch vocoder training from a structured TOML config."
+        description="Launch components training from a structured TOML config."
     )
 
     parser.add_argument(
         "--config",
         type=Path,
         required=True,
-        help="Path to the vocoder experiment TOML file.",
+        help="Path to the components experiment TOML file.",
     )
 
     parser.add_argument(

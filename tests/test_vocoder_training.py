@@ -1,9 +1,9 @@
 import pytest
 import torch
 
-from src.training.vocoder.accumulation import accumulation_windows
-from src.training.vocoder.runtime import derive_training_seed, set_seed
-from src.training.vocoder_step import vocoder_train_step, zero_vocoder_gradients, vocoder_train_micro_step, \
+from src.training.vocoder import accumulation_windows
+from vocoder.src.nes_vocoder.models.src.training.vocoder.runtime import derive_training_seed, set_seed
+from vocoder.src.nes_vocoder.training.step import vocoder_train_step, zero_vocoder_gradients, vocoder_train_micro_step, \
     finish_vocoder_optimizer_step
 from tests.helpers.vocoder_training_helpers import make_training_fixture, assert_module_parameters_equal, \
     clone_parameter_state, assert_module_parameters_changed

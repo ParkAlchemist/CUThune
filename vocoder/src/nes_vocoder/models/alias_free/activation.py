@@ -3,7 +3,7 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 
-from src.models.alias_free.resample import (
+from vocoder.src.nes_vocoder.models.alias_free.resample import (
     DownSample1d,
     UpSample1d,
 )

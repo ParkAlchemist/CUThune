@@ -30,8 +30,8 @@ def get_activation(
         return nn.SiLU(inplace=inplace)
     elif name == "tanh":
         return nn.Tanh()
-
-    raise ValueError(f"Unknown activation function: {name}")
+    else:
+        raise ValueError(f"Unknown activation function: {name}")
 
 
 def get_norm_layer(

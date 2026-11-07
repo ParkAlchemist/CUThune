@@ -8,8 +8,8 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from src.data.cqt_dataset import discover_cache_records
-from src.data.cqt_feature_utils import (
+from shared.src.chiptune_shared.cqt.cache import discover_cache_records
+from shared.src.chiptune_shared.cqt.features import (
     load_audio,
     trim_silence,
     peak_normalize,
@@ -62,7 +62,7 @@ def load_processed_waveform(
     Long-term improvement:
         Store processed waveform or trim indices during preprocessing. For now,
         this mirrors the existing CQT preprocessing assumptions closely enough
-        for the first vocoder baseline.
+        for the first components baseline.
     """
     y, _ = load_audio(
         source_path,
@@ -78,7 +78,7 @@ def load_processed_waveform(
 
 class CQTVocoderDataset(Dataset):
     """
-    Paired dataset for vocoder training.
+    Paired dataset for components training.
 
     Source:
         cached real-chip CQT from cache/cqt/chip/*.pt
@@ -96,7 +96,7 @@ class CQTVocoderDataset(Dataset):
     Alignment rule:
         frame_start k maps to sample_start k * hop_length
 
-    Maintaining this alignment is critical for vocoder training.
+    Maintaining this alignment is critical for components training.
     """
 
     def __init__(

@@ -340,7 +340,7 @@ def load_vocoder_config(
     path: Path,
 ) -> VocoderExperimentConfig:
     """
-    Load and validate a vocoder experiment TOML file.
+    Load and validate a components experiment TOML file.
 
     Expected nested sections include:
 

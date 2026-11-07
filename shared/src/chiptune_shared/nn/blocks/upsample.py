@@ -5,7 +5,7 @@ from typing import Literal
 import torch
 import torch.nn as nn
 
-from ..model_utils import (
+from shared.src.chiptune_shared.nn.model_utils import (
     NormType,
     PaddingMode,
     ActivationType,

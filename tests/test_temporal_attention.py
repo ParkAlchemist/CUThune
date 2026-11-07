@@ -3,8 +3,8 @@ import torch
 from torch import nn
 
 from vocoder.src.nes_vocoder.config.schema import ContextAttentionConfig
-from src.models.blocks.convnext_context import ConvNeXtContextTrunk1d
-from src.models.blocks.temporal_attention import (
+from src.models.blocks import ConvNeXtContextTrunk1d
+from src.models.blocks import (
     RotaryPositionEmbedding,
     RoPETemporalSelfAttention1d,
 )

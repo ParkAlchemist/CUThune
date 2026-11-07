@@ -16,7 +16,7 @@ from vocoder.src.nes_vocoder.config.schema import (
     ScaleDiscriminatorConfig,
     VocoderDiscriminatorConfig,
 )
-from src.models.vocoder_discriminators import (
+from vocoder.src.nes_vocoder.models.discriminators import (
     PeriodDiscriminator,
     ResolutionDiscriminator,
     ScaleDiscriminator,

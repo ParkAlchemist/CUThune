@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from src.models.alias_free.filter import design_lowpass_filter
+from vocoder.src.nes_vocoder.models.alias_free.filter import design_lowpass_filter
 
 
 def _pad_or_crop_to_length(

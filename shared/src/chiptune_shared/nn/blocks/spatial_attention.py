@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ..model_utils import (
+from shared.src.chiptune_shared.nn.model_utils import (
     maybe_spectral_norm,
 )
 

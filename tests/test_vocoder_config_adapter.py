@@ -1,6 +1,6 @@
 import torch
 
-from src.models.vocoder_hifigan import CQTUHiFiGANGenerator
+from vocoder.src.nes_vocoder.models.generator import CQTUHiFiGANGenerator
 
 
 from vocoder.src.nes_vocoder.config.schema import VocoderExperimentConfig

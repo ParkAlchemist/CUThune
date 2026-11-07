@@ -5,7 +5,7 @@ from vocoder.src.nes_vocoder.config.schema import VocoderExperimentConfig, Vocod
     BandPowerLossConfig, SpectralFlatnessLossConfig, DCOffsetLossConfig, CQTConsistencyLossConfig, CQTAnalysisConfig, \
     RailOccupancyLossConfig
 
-from src.models.vocoder_discriminators import (
+from vocoder.src.nes_vocoder.models.discriminators import (
     MultiPeriodDiscriminatorConfig as ModelMPDConfig,
     MultiScaleDiscriminatorConfig as ModelMSDConfig,
     ScaleDiscriminatorConfig as ModelScaleConfig,

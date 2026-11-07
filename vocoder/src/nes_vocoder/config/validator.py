@@ -23,7 +23,7 @@ def _format_errors(errors: Iterable[str]) -> str:
     errors = list(errors)
 
     return (
-        "Invalid vocoder experiment configuration:\n"
+        "Invalid components experiment configuration:\n"
         + "\n".join(f"  - {error}" for error in errors)
     )
 

@@ -203,7 +203,7 @@ class MultiResolutionSTFTLoss(nn.Module):
     Multi-resolution STFT loss.
 
     This is the main non-adversarial waveform reconstruction loss for the
-    vocoder. It compares generated and real audio at multiple time-frequency
+    components. It compares generated and real audio at multiple time-frequency
     resolutions.
     """
 

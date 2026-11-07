@@ -1,29 +1,28 @@
 from pathlib import Path
 
 import torch
-from torch.utils.tensorboard import SummaryWriter
 
-from src.training.vocoder.builders import (
+from vocoder.src.nes_vocoder.training.builders import (
     build_training_components,
 )
-from src.training.vocoder.data import (
+from vocoder.src.nes_vocoder.models.src.training.vocoder.data import (
     build_dataloaders,
     collect_overfit_batches,
     save_overfit_debug_data,
 )
-from src.training.vocoder.context import (
+from src.training.vocoder import (
     TrainingRuntime,
 )
-from src.training.vocoder.runtime import (
+from vocoder.src.nes_vocoder.models.src.training.vocoder.runtime import (
     build_run_paths,
     create_run_directories,
     configure_stop_controller,
 )
-from src.training.vocoder.logging import (
+from vocoder.src.nes_vocoder.training.logging import (
     write_model_manifest,
     write_model_structure,
     write_torchinfo_generator_summary, )
-from src.training.vocoder.metrics import ScalarMetricAccumulator
+from vocoder.src.nes_vocoder.training.metrics import ScalarMetricAccumulator
 
 
 def build_training_runtime(

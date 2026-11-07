@@ -6,8 +6,8 @@ import numpy as np
 import torch
 from matplotlib import pyplot as plt
 
-from src.data.cqt_dataset import discover_cache_records
-from src.data.vocoder_dataset import load_processed_waveform, pad_1d
+from shared.src.chiptune_shared.cqt.cache import discover_cache_records
+from vocoder.src.nes_vocoder.data.dataset import load_processed_waveform, pad_1d
 
 
 def normalize_path_string(path: str | Path) -> str:

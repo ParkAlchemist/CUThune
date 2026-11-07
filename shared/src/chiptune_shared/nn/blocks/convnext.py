@@ -6,7 +6,7 @@ import torch.nn as nn
 from collections.abc import Sequence
 
 from vocoder.src.nes_vocoder.config.schema import ContextAttentionConfig
-from src.models.blocks.temporal_attention import RoPETemporalSelfAttention1d
+from src.models.blocks import RoPETemporalSelfAttention1d
 
 
 class GlobalResponseNorm1d(nn.Module):

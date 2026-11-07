@@ -4,7 +4,7 @@ from typing import Sequence
 
 import torch
 
-from src.losses.vocoder.feature_matching_loss import DISCRIMINATOR_FAMILIES, FamilyLossOutput, mean_enabled_families
+from vocoder.src.nes_vocoder.models.src.losses.vocoder.feature_matching_loss import DISCRIMINATOR_FAMILIES, FamilyLossOutput, mean_enabled_families
 
 
 def lsgan_generator_adversarial_loss(

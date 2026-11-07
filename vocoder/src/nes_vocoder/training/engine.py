@@ -2,40 +2,39 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
-from collections.abc import Iterable
 from pathlib import Path
 
 from tqdm import tqdm
 import numpy as np
 import torch
 
-from src.training.vocoder.accumulation import (
+from src.training.vocoder import (
     average_loss_dicts,
     accumulation_windows,
 )
-from src.training.vocoder.context import (
+from src.training.vocoder import (
     TrainingComponents,
     TrainingState,
 )
-from src.training.vocoder.runtime import derive_training_seed, set_seed
-from src.training.vocoder_step import (
+from vocoder.src.nes_vocoder.models.src.training.vocoder.runtime import derive_training_seed, set_seed
+from vocoder.src.nes_vocoder.training.step import (
     finish_vocoder_optimizer_step,
     vocoder_train_micro_step, zero_vocoder_gradients,
 )
-from src.training.vocoder.schedulers import (
+from src.training.vocoder import (
     step_vocoder_schedulers, get_vocoder_learning_rates,
 )
-from src.training.vocoder.checkpointing import (
+from src.training.vocoder import (
     prune_numbered_checkpoints,
     save_checkpoint,
 )
-from src.training.vocoder.preview import (
+from src.training.vocoder import (
     export_preview_wavs,
 )
-from src.training.vocoder.logging import (
+from vocoder.src.nes_vocoder.training.logging import (
     collect_context_parameter_metrics,
     write_status, )
-from src.training.vocoder.metrics import split_logging_metrics, log_interval_maxima
+from vocoder.src.nes_vocoder.training.metrics import split_logging_metrics, log_interval_maxima
 
 
 @dataclass
@@ -496,7 +495,7 @@ def run_training(
         config.training.detect_anomaly
     )
 
-    print("Starting vocoder training.")
+    print("Starting components training.")
     print(f"Run dir: {runtime.paths.run_dir}")
     print(f"Device: {runtime.device}")
     print(

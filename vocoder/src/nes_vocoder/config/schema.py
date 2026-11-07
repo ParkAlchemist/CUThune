@@ -15,7 +15,7 @@ TemporalLossMode = Literal["pointwise_gradient", "slew_envelope"]
 
 @dataclass
 class RunConfig:
-    experiment_name: str = "vocoder"
+    experiment_name: str = "components"
     output_root: str = "runs/vocoder_cqt"
     seed: int = 1337
     device: str = "cuda"

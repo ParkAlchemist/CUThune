@@ -1,10 +1,10 @@
-from src.models.alias_free.activation import (
+from vocoder.src.nes_vocoder.models.alias_free.activation import (
     AliasFreeActivation1d,
 )
-from src.models.alias_free.filter import (
+from vocoder.src.nes_vocoder.models.alias_free.filter import (
     design_lowpass_filter,
 )
-from src.models.alias_free.resample import (
+from vocoder.src.nes_vocoder.models.alias_free.resample import (
     DownSample1d,
     LowPassFilter1d,
     UpSample1d,

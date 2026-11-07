@@ -1,6 +1,6 @@
 import pytest
 
-from src.training.vocoder.metrics import should_average_metric, ScalarMetricAccumulator
+from vocoder.src.nes_vocoder.training.metrics import should_average_metric, ScalarMetricAccumulator
 
 
 def test_metric_accumulator_calculates_means() -> None:

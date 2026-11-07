@@ -1,13 +1,13 @@
 import torch
 
-from src.models.blocks.conv_norm_act import ConvNormAct
-from src.models.blocks.downsample_block import DownsampleBlock
-from src.models.blocks.upsample_block import UpsampleBlock
-from src.models.blocks.residual_block import ResidualBlock
-from src.models.blocks.spatial_self_attention import SpatialSelfAttention
-from src.models.blocks.patch_discriminator_block import PatchDiscriminatorBlock
-from src.models.blocks.channel_attention import SqueezeExciteBlock
-from src.models.model_utils import CQTBufferPad, get_padding_layer
+from src.models.blocks import ConvNormAct
+from src.models.blocks import DownsampleBlock
+from src.models.blocks import UpsampleBlock
+from src.models.blocks import ResidualBlock
+from src.models.blocks import SpatialSelfAttention
+from src.models.blocks import PatchDiscriminatorBlock
+from src.models.blocks import SqueezeExciteBlock
+from shared.src.chiptune_shared.nn.model_utils import CQTBufferPad, get_padding_layer
 
 
 def test_cqt_buffer_pad_shape():

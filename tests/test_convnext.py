@@ -4,12 +4,12 @@ from torch import nn
 
 from vocoder.src.nes_vocoder.config.schema import VocoderGeneratorModelConfig
 
-from src.models.blocks.convnext_context import (
+from src.models.blocks import (
     ConvNeXtContextBlock1d,
     ConvNeXtContextTrunk1d, compute_balanced_channel_splits, MultiKernelConvNeXtContextBlock1d
 )
 
-from src.models.vocoder_hifigan import CQTUHiFiGANGenerator
+from vocoder.src.nes_vocoder.models.generator import CQTUHiFiGANGenerator
 
 @pytest.mark.parametrize(
     ("kernel_size", "dilation"),

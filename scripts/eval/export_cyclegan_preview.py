@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 import runpy
-import sys
 import argparse
 import json
 import csv
@@ -23,17 +22,15 @@ import torch
 import torch.nn.functional as F
 from tqdm import tqdm
 
-from src.data.cqt_dataset import (
-    CachedCQTTrackDataset,
-    UnpairedCQTDataset,
-)
+from shared.src.chiptune_shared.cqt.cache import CachedCQTTrackDataset
+from cut.src.nes_cut.data.unpaired_dataset import UnpairedCQTDataset
 from src.models.cyclegan import (
     GeneratorConfig,
     DiscriminatorConfig,
     AudioResnetGenerator,
     PatchGANDiscriminator,
 )
-from src.losses.cyclegan_losses import cqt_to_chroma
+from vocoder.src.nes_vocoder.models.src.losses.cyclegan_losses import cqt_to_chroma
 
 
 def parse_args() -> argparse.Namespace:

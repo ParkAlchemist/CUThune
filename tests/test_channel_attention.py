@@ -2,12 +2,12 @@ import pytest
 import torch
 
 from vocoder.src.nes_vocoder.config.schema import VocoderGeneratorModelConfig
-from src.models.blocks.channel_attention import (
+from src.models.blocks import (
     ECABlock1d,
     ECABlock2d,
     compute_eca_kernel_size, ECAChannelGate,
 )
-from src.models.vocoder_hifigan import CQTUHiFiGANGenerator
+from vocoder.src.nes_vocoder.models.generator import CQTUHiFiGANGenerator
 
 
 @pytest.mark.parametrize(

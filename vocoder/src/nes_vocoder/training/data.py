@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from vocoder.src.nes_vocoder.config.schema import VocoderExperimentConfig
-from src.data.vocoder_dataset import CQTVocoderDataset
+from vocoder.src.nes_vocoder.data.dataset import CQTVocoderDataset
 
 
 def build_loader_kwargs(

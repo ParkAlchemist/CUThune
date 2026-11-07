@@ -1,22 +1,19 @@
 from __future__ import annotations
 
-from contextlib import nullcontext
 from dataclasses import dataclass
-from typing import Any
 
 import torch
 import torch.nn as nn
 
-from src.losses.vocoder_losses import (
+from vocoder.src.nes_vocoder.models.src.losses import (
     VocoderLossBundle,
     compute_vocoder_discriminator_loss,
     compute_vocoder_generator_loss,
     detach_vocoder_loss_dict, discriminator_family_losses, family_balanced_discriminator_loss,
 )
-from src.losses.vocoder.metrics import generator_loss_metrics, discriminator_loss_metrics
-from src.losses.vocoder.adversarial_loss import generator_family_adversarial_losses
-from src.losses.vocoder.feature_matching_loss import generator_family_feature_matching_losses
-from src.training.vocoder.logging import (
+from vocoder.src.nes_vocoder.models.src.losses.vocoder.metrics import generator_loss_metrics, discriminator_loss_metrics
+from vocoder.src.nes_vocoder.models.src.losses import generator_family_adversarial_losses
+from vocoder.src.nes_vocoder.training.logging import (
     discriminator_branch_metrics,
     discriminator_health_metrics,
 )

@@ -13,27 +13,27 @@ from vocoder.src.nes_vocoder.config.loader import (
 from vocoder.src.nes_vocoder.config.validator import (
     validate_vocoder_config,
 )
-from src.training.vocoder.checkpointing import (
+from src.training.vocoder import (
     load_checkpoint,
 )
-from src.training.vocoder.engine import run_training
-from src.training.vocoder.logging import (
+from vocoder.src.nes_vocoder.training.engine import run_training
+from vocoder.src.nes_vocoder.training.logging import (
     save_config_snapshot,
 )
-from src.training.vocoder.runtime import (
+from vocoder.src.nes_vocoder.models.src.training.vocoder.runtime import (
     resolve_device,
     resolve_project_path,
     set_seed,
     validate_implemented_features,
 )
-from src.training.vocoder.setup import (
+from vocoder.src.nes_vocoder.training.setup import (
     build_training_runtime,
 )
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Train the CQT-conditioned vocoder."
+        description="Train the CQT-conditioned components."
     )
 
     parser.add_argument(
@@ -102,7 +102,7 @@ def main() -> None:
         runtime.resumed_from_checkpoint = True
 
     if state is None:
-        from src.training.vocoder.context import TrainingState
+        from src.training.vocoder import TrainingState
 
         state = TrainingState()
 

@@ -6,20 +6,20 @@ import torch
 import torch.nn as nn
 
 from vocoder.src.nes_vocoder.config.schema import VocoderLossConfig
-from src.losses.vocoder.adversarial_loss import family_balanced_generator_adversarial_loss
-from src.losses.vocoder.band_power_loss import MultiResolutionBandPowerLoss, MultiResolutionBandPowerLossOutput
-from src.losses.vocoder.cqt_consistency_loss import CQTLogMagnitudeLoss, CQTConsistencyLossOutput
-from src.losses.vocoder.dc_offset_loss import MultiScaleDCOffsetLoss, MultiScaleDCOffsetLossOutput
-from src.losses.vocoder.feature_matching_loss import DISCRIMINATOR_FAMILIES, mean_enabled_families, \
+from vocoder.src.nes_vocoder.models.src.losses import family_balanced_generator_adversarial_loss
+from vocoder.src.nes_vocoder.models.src.losses import MultiResolutionBandPowerLoss, MultiResolutionBandPowerLossOutput
+from vocoder.src.nes_vocoder.models.src.losses.vocoder.cqt_consistency_loss import CQTLogMagnitudeLoss, CQTConsistencyLossOutput
+from vocoder.src.nes_vocoder.models.src.losses.vocoder.dc_offset_loss import MultiScaleDCOffsetLoss, MultiScaleDCOffsetLossOutput
+from vocoder.src.nes_vocoder.models.src.losses.vocoder.feature_matching_loss import DISCRIMINATOR_FAMILIES, mean_enabled_families, \
     family_balanced_feature_matching_loss
-from src.losses.vocoder.mrstft_loss import MultiResolutionSTFTLoss, MultiResolutionSTFTLossOutput
-from src.losses.vocoder.rail_occupancy_loss import MultiScaleRailOccupancyLoss, \
+from vocoder.src.nes_vocoder.models.src.losses.vocoder.mrstft_loss import MultiResolutionSTFTLoss, MultiResolutionSTFTLossOutput
+from vocoder.src.nes_vocoder.models.src.losses import MultiScaleRailOccupancyLoss, \
     MultiScaleRailOccupancyLossOutput
-from src.losses.vocoder.rms_envelope_loss import MultiScaleRMSEnvelopeLoss, MultiScaleRMSEnvelopeLossOutput
-from src.losses.vocoder.spectral_flatness_loss import SubBandSpectralFlatnessLoss, SubBandSpectralFlatnessLossOutput
-from src.losses.vocoder.temporal_gradient_loss import MultiScaleTemporalGradientLoss, \
+from vocoder.src.nes_vocoder.models.src.losses import MultiScaleRMSEnvelopeLoss, MultiScaleRMSEnvelopeLossOutput
+from vocoder.src.nes_vocoder.models.src.losses import SubBandSpectralFlatnessLoss, SubBandSpectralFlatnessLossOutput
+from vocoder.src.nes_vocoder.models.src.losses import MultiScaleTemporalGradientLoss, \
     MultiScaleSlewEnvelopeLoss, MultiScaleSlewEnvelopeLossOutput
-from src.losses.vocoder.waveform_loss import waveform_loss
+from vocoder.src.nes_vocoder.models.src.losses import waveform_loss
 
 
 @dataclass
@@ -31,7 +31,7 @@ class VocoderDiscriminatorLossOutput:
 
 class VocoderLossBundle(nn.Module):
     """
-    Container for vocoder losses.
+    Container for components losses.
 
     Kept as nn.Module so the STFT loss modules are properly moved with .to(device)
     if needed, although windows are created device-locally at runtime.

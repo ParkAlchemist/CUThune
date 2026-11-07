@@ -2,7 +2,7 @@ import pytest
 import torch
 from torch import nn
 
-from src.models.blocks.convnext_context import GlobalResponseNorm1d, ConvNeXtContextBlock1d, \
+from src.models.blocks import GlobalResponseNorm1d, ConvNeXtContextBlock1d, \
     MultiKernelConvNeXtContextBlock1d
 
 

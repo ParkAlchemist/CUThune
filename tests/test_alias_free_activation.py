@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from src.models.alias_free import (
+from vocoder.src.nes_vocoder.models.alias_free import (
     AliasFreeActivation1d,
     DownSample1d,
     UpSample1d,
@@ -104,7 +104,7 @@ def test_alias_free_wrapper_preserves_shape(length: int):
     assert torch.isfinite(y).all()
 
 
-from src.models.vocoder_hifigan import SnakeBeta
+from vocoder.src.nes_vocoder.models.generator import SnakeBeta
 
 
 def test_alias_free_snake_beta_shape_and_gradient():

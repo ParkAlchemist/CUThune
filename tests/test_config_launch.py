@@ -8,7 +8,7 @@ from scripts.train.resume_vocoder_train_config import (
     build_resume_command,
 )
 
-from src.training.checkpoint_paths import (
+from shared.src.chiptune_shared.experiment.checkpoint_paths import (
     resolve_checkpoint_selector,
 )
 

@@ -1,6 +1,6 @@
 import torch
 
-from src.losses.cyclegan_losses import (
+from vocoder.src.nes_vocoder.models.src.losses.cyclegan_losses import (
     GANLoss,
     ChromaConsistencyLoss,
     cqt_to_chroma,

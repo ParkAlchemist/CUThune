@@ -9,10 +9,7 @@ from tests.test_config import (
     BATCH_SIZE,
 )
 
-from src.data.cqt_dataset import (
-    build_unpaired_cqt_dataset,
-    build_unpaired_cqt_dataloader,
-)
+from cut.src.nes_cut.data.unpaired_dataset import build_unpaired_cqt_dataset, build_unpaired_cqt_dataloader
 
 
 def test_unpaired_cqt_dataset_can_be_constructed():

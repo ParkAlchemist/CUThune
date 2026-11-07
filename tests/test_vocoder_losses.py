@@ -6,22 +6,22 @@ import torch.nn.functional as F
 
 from vocoder.src.nes_vocoder.config.schema import MRSTFTConfig, RMSEnvelopeLossConfig, BandPowerLossConfig, SpectralFlatnessLossConfig, \
     DCOffsetLossConfig
-from src.losses.vocoder_losses import (
+from vocoder.src.nes_vocoder.models.src.losses import (
     VocoderLossConfig,
     VocoderLossBundle,
     compute_vocoder_discriminator_loss,
     family_balanced_discriminator_loss, )
-from src.losses.vocoder.metrics import generator_loss_metrics, discriminator_loss_metrics, \
+from vocoder.src.nes_vocoder.models.src.losses.vocoder.metrics import generator_loss_metrics, discriminator_loss_metrics, \
     generator_loss_contribution_metrics
-from src.losses.vocoder.adversarial_loss import family_balanced_generator_adversarial_loss
-from src.losses.vocoder.feature_matching_loss import mean_enabled_families, \
+from vocoder.src.nes_vocoder.models.src.losses import family_balanced_generator_adversarial_loss
+from vocoder.src.nes_vocoder.models.src.losses.vocoder.feature_matching_loss import mean_enabled_families, \
     family_balanced_feature_matching_loss, feature_matching_loss
-from src.losses.vocoder.dc_offset_loss import MultiScaleDCOffsetLoss
-from src.losses.vocoder.temporal_gradient_loss import MultiScaleTemporalGradientLoss, MultiScaleSlewEnvelopeLoss
-from src.losses.vocoder.spectral_flatness_loss import log_spectral_flatness, SubBandSpectralFlatnessLoss
-from src.losses.vocoder.band_power_loss import build_log_frequency_filterbank, MultiResolutionBandPowerLoss
-from src.losses.vocoder.rms_envelope_loss import MultiScaleRMSEnvelopeLoss
-from src.losses.vocoder.mrstft_loss import SingleResolutionSTFTLoss, MultiResolutionSTFTLoss
+from vocoder.src.nes_vocoder.models.src.losses.vocoder.dc_offset_loss import MultiScaleDCOffsetLoss
+from vocoder.src.nes_vocoder.models.src.losses import MultiScaleTemporalGradientLoss, MultiScaleSlewEnvelopeLoss
+from vocoder.src.nes_vocoder.models.src.losses import log_spectral_flatness, SubBandSpectralFlatnessLoss
+from vocoder.src.nes_vocoder.models.src.losses import build_log_frequency_filterbank, MultiResolutionBandPowerLoss
+from vocoder.src.nes_vocoder.models.src.losses import MultiScaleRMSEnvelopeLoss
+from vocoder.src.nes_vocoder.models.src.losses.vocoder.mrstft_loss import SingleResolutionSTFTLoss, MultiResolutionSTFTLoss
 from tests.helpers.vocoder_loss_helpers import make_test_generator_loss_output, make_multi_family_discriminator_outputs, \
     make_discriminator_family, \
     assert_family_loss_output_consistent, assert_family_discriminator_loss_consistent, make_test_spectral_flatness_loss, \
