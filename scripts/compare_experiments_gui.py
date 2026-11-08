@@ -14,7 +14,7 @@ import torch
 
 
 THIS_FILE = Path(__file__).resolve()
-PROJECT_ROOT = THIS_FILE.parents[2]
+PROJECT_ROOT = THIS_FILE.parents[1]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 

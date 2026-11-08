@@ -11,7 +11,7 @@ from legacy.cyclegan.losses.cyclegan_losses import cqt_to_chroma
 from legacy.cyclegan.models.cyclegan import AudioResnetGenerator, PatchGANDiscriminator, GeneratorConfig, \
     DiscriminatorConfig
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[4]
 
 runpy.run_path(
     str(PROJECT_ROOT / "scripts" / "eval" / "export_cyclegan_preview.py"),

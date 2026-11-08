@@ -10,7 +10,7 @@ import numpy as np
 import librosa.display
 
 THIS_FILE = Path(__file__).resolve()
-PROJECT_ROOT = THIS_FILE.parents[2]
+PROJECT_ROOT = THIS_FILE.parents[3]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from shared.src.chiptune_shared.cqt.features import (

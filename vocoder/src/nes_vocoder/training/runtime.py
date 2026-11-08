@@ -108,6 +108,8 @@ def build_run_paths(
         / config.run.experiment_name
     )
 
+    run_dir = "vocoder" / run_dir
+
     return RunPaths(
         run_dir=run_dir,
         checkpoint_dir=run_dir / "checkpoints",

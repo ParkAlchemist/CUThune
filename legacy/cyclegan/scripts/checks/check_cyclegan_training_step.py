@@ -7,7 +7,7 @@ from legacy.cyclegan.models.cyclegan import GeneratorConfig, DiscriminatorConfig
 from legacy.cyclegan.src.cyclegan_step import CycleGANModels, CycleGANOptimizers, cyclegan_train_step
 
 THIS_FILE = Path(__file__).resolve()
-PROJECT_ROOT = THIS_FILE.parents[2]
+PROJECT_ROOT = THIS_FILE.parents[4]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 import torch

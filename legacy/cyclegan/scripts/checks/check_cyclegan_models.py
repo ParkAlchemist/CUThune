@@ -5,7 +5,7 @@ from legacy.cyclegan.models.cyclegan import GeneratorConfig, DiscriminatorConfig
     PatchGANDiscriminator, MultiScalePatchGANDiscriminator, describe_model
 
 THIS_FILE = Path(__file__).resolve()
-PROJECT_ROOT = THIS_FILE.parents[2]
+PROJECT_ROOT = THIS_FILE.parents[4]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 import torch

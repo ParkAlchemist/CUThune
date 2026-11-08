@@ -8,10 +8,11 @@ import sys
 import torch
 
 THIS_FILE = Path(__file__).resolve()
-PROJECT_ROOT = THIS_FILE.parents[3]/ "vocoder"
-TRAIN_SCRIPT = PROJECT_ROOT/ "vocoder" / "scripts" / "train" / "train_vocoder.py"
+REPO_ROOT = THIS_FILE.parents[3]
+VOCODER_ROOT = REPO_ROOT / "vocoder"
+TRAIN_SCRIPT = VOCODER_ROOT / "scripts" / "train" / "train_vocoder.py"
 
-sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(REPO_ROOT))
 
 from shared.src.chiptune_shared.experiment.checkpoint_paths import (
     resolve_checkpoint_selector,
@@ -111,7 +112,7 @@ def format_command(command: list[str]) -> str:
 def main() -> None:
     args, passthrough = parse_args()
 
-    config_path = resolve_project_path(args.config, PROJECT_ROOT)
+    config_path = resolve_project_path(args.config, VOCODER_ROOT)
 
     if not config_path.exists():
         raise FileNotFoundError(
@@ -133,7 +134,7 @@ def main() -> None:
     output_root = Path(config.run.output_root).expanduser()
 
     if not output_root.is_absolute():
-        output_root = PROJECT_ROOT / output_root
+        output_root = VOCODER_ROOT / output_root
 
     run_dir = (
         output_root.resolve()
@@ -150,7 +151,7 @@ def main() -> None:
     checkpoint_path = resolve_checkpoint_selector(
         checkpoint_dir=checkpoint_dir,
         selector=args.checkpoint,
-        project_root=PROJECT_ROOT,
+        project_root=REPO_ROOT,
     )
 
     epoch, global_step = inspect_checkpoint(checkpoint_path)
@@ -183,7 +184,7 @@ def main() -> None:
 
     subprocess.run(
         command,
-        cwd=PROJECT_ROOT,
+        cwd=REPO_ROOT,
         check=True,
     )
 

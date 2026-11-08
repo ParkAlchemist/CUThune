@@ -6,9 +6,10 @@ import subprocess
 import sys
 
 THIS_FILE = Path(__file__).resolve()
-PROJECT_ROOT = THIS_FILE.parents[2]
-sys.path.insert(0, str(PROJECT_ROOT))
-TRAIN_SCRIPT = PROJECT_ROOT / "scripts" / "train" / "train_vocoder.py"
+REPO_ROOT = THIS_FILE.parents[3]
+sys.path.insert(0, str(REPO_ROOT))
+VOCODER_ROOT = REPO_ROOT/"vocoder"
+TRAIN_SCRIPT = VOCODER_ROOT / "scripts" / "train" / "train_vocoder.py"
 
 from src.utils.config_launch import (
     resolve_project_path,
@@ -65,7 +66,7 @@ def build_run_command(
 def main() -> None:
     args, passthrough = parse_args()
 
-    config_path = resolve_project_path(args.config, PROJECT_ROOT)
+    config_path = resolve_project_path(args.config, VOCODER_ROOT)
 
     if not config_path.exists():
         raise FileNotFoundError(
@@ -93,7 +94,7 @@ def main() -> None:
 
     run_command(
         command=command,
-        cwd=PROJECT_ROOT,
+        cwd=REPO_ROOT,
         dry_run=args.dry_run,
     )
 
