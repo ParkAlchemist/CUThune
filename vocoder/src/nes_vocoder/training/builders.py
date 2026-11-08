@@ -10,18 +10,18 @@ from vocoder.src.nes_vocoder.config.schema import (
     VocoderExperimentConfig,
 )
 from vocoder.src.nes_vocoder.config.adapter import build_loss_config
-from vocoder.src.nes_vocoder.models.src.losses import VocoderLossBundle
 from vocoder.src.nes_vocoder.models.discriminators import (
     HiFiGANMultiDiscriminator,
 )
 from vocoder.src.nes_vocoder.models.generator import (
     CQTUHiFiGANGenerator,
 )
-from src.training.vocoder import TrainingComponents
 from vocoder.src.nes_vocoder.training.step import (
     VocoderModels,
     VocoderOptimizers,
 )
+from vocoder.src.nes_vocoder.training.context import TrainingComponents
+from vocoder.src.nes_vocoder.losses.objective import VocoderLossBundle
 
 
 def build_optimizer(

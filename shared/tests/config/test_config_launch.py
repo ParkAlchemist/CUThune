@@ -1,16 +1,10 @@
 from pathlib import Path
 
-from scripts.train.run_vocoder_train_config import (
-    build_run_command,
-)
-
-from scripts.train.resume_vocoder_train_config import (
-    build_resume_command,
-)
-
 from shared.src.chiptune_shared.experiment.checkpoint_paths import (
     resolve_checkpoint_selector,
 )
+from vocoder.scripts.train.resume_config import build_resume_command
+from vocoder.scripts.train.run_config import build_run_command
 
 
 def test_build_vocoder_run_command():

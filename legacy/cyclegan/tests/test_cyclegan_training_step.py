@@ -1,25 +1,13 @@
 import torch
 
+from legacy.cyclegan.losses.cyclegan_losses import build_cyclegan_loss_bundle, CycleGANLossConfig
+from legacy.cyclegan.models.cyclegan import GeneratorConfig, DiscriminatorConfig, AudioResnetGenerator, \
+    PatchGANDiscriminator
+from legacy.cyclegan.src.cyclegan_step import CycleGANModels, CycleGANOptimizers, cyclegan_train_step
+from legacy.cyclegan.src.replay_buffer import ReplayBuffer
 from tests.test_config import CACHE_ROOT
 
 from cut.src.nes_cut.data.unpaired_dataset import build_unpaired_cqt_dataloader
-from src.models.cyclegan import (
-    GeneratorConfig,
-    DiscriminatorConfig,
-    AudioResnetGenerator,
-    PatchGANDiscriminator,
-)
-from vocoder.src.nes_vocoder.models.src.losses.cyclegan_losses import (
-    CycleGANLossConfig,
-    build_cyclegan_loss_bundle,
-)
-from vocoder.src.nes_vocoder.models.src.training.cyclegan_step import (
-    CycleGANModels,
-    CycleGANOptimizers,
-    cyclegan_train_step,
-)
-from src.training.replay_buffer import ReplayBuffer
-
 
 def clone_first_parameter(model: torch.nn.Module) -> torch.Tensor:
     for param in model.parameters():

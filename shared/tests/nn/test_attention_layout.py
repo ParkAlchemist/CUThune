@@ -1,12 +1,9 @@
 import pytest
 
-from src.models.cyclegan import (
-    GeneratorConfig,
-    split_resblocks_for_balanced_attention,
-    build_bottleneck_layers,
-)
-from src.models.blocks import ResidualBlock
-from src.models.blocks import SpatialSelfAttention
+from legacy.cyclegan.models.cyclegan import split_resblocks_for_balanced_attention, GeneratorConfig, \
+    build_bottleneck_layers
+from shared.src.chiptune_shared.nn.blocks.residual import ResidualBlock
+from shared.src.chiptune_shared.nn.blocks.spatial_attention import SpatialSelfAttention
 
 
 def layer_names(layers):

@@ -1,12 +1,7 @@
 import torch
 
-from src.models.cyclegan import (
-    GeneratorConfig,
-    DiscriminatorConfig,
-    AudioResnetGenerator,
-    PatchGANDiscriminator,
-    MultiScalePatchGANDiscriminator,
-)
+from legacy.cyclegan.models.cyclegan import GeneratorConfig, AudioResnetGenerator, DiscriminatorConfig, \
+    PatchGANDiscriminator, MultiScalePatchGANDiscriminator
 
 
 def test_generator_preserves_cqt_shape_cpu():

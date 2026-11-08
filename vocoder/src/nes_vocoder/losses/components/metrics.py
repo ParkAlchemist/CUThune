@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import torch
 
-from vocoder.src.nes_vocoder.models.src.losses import FamilyDiscriminatorLossOutput, VocoderGeneratorLossOutput
+from vocoder.src.nes_vocoder.losses.objective import VocoderGeneratorLossOutput, FamilyDiscriminatorLossOutput
 
 
 def generator_loss_metrics(

@@ -12,22 +12,18 @@ import time
 import torch
 import torch.nn as nn
 
+from shared.src.chiptune_shared.nn.blocks.convnext import ConvNeXtContextBlock1d, MultiKernelConvNeXtContextBlock1d, \
+    GlobalResponseNorm1d
+from shared.src.chiptune_shared.nn.blocks.temporal_attention import RoPETemporalSelfAttention1d
 from vocoder.src.nes_vocoder.config.schema import VocoderExperimentConfig
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from src.training.vocoder import (
+    from vocoder.src.nes_vocoder.training.context import (
         RunPaths,
         TrainingState,
     )
-from src.models.blocks import (
-    GlobalResponseNorm1d,
-    MultiKernelConvNeXtContextBlock1d,
-    ConvNeXtContextBlock1d,
-)
-from src.models.blocks import (
-    RoPETemporalSelfAttention1d,
-)
+
 
 
 def save_json(

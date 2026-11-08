@@ -2,12 +2,9 @@ import pytest
 import torch
 from torch import nn
 
+from shared.src.chiptune_shared.nn.blocks.convnext import ConvNeXtContextBlock1d, ConvNeXtContextTrunk1d, \
+    compute_balanced_channel_splits, MultiKernelConvNeXtContextBlock1d
 from vocoder.src.nes_vocoder.config.schema import VocoderGeneratorModelConfig
-
-from src.models.blocks import (
-    ConvNeXtContextBlock1d,
-    ConvNeXtContextTrunk1d, compute_balanced_channel_splits, MultiKernelConvNeXtContextBlock1d
-)
 
 from vocoder.src.nes_vocoder.models.generator import CQTUHiFiGANGenerator
 

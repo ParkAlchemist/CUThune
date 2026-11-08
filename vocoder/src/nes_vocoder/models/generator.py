@@ -8,7 +8,8 @@ import torch.nn.functional as F
 from torch.nn.utils import remove_weight_norm
 from torch.nn.utils.parametrizations import weight_norm
 
-
+from shared.src.chiptune_shared.nn.blocks.channel_attention import ECABlock1d
+from shared.src.chiptune_shared.nn.blocks.convnext import ConvNeXtContextTrunk1d
 from vocoder.src.nes_vocoder.config.schema import (
     VocoderGeneratorModelConfig,
     ActivationType, SnakeBetaConfig, AliasFreeConfig,
@@ -16,14 +17,6 @@ from vocoder.src.nes_vocoder.config.schema import (
 
 from vocoder.src.nes_vocoder.models.alias_free import (
     AliasFreeActivation1d,
-)
-
-from src.models.blocks import (
-    ECABlock1d,
-)
-
-from src.models.blocks import (
-    ConvNeXtContextTrunk1d,
 )
 
 

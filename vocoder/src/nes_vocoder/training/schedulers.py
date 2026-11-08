@@ -3,7 +3,7 @@ from __future__ import annotations
 import torch
 
 from vocoder.src.nes_vocoder.config.schema import SchedulerConfig
-from src.training.vocoder import TrainingComponents
+from vocoder.src.nes_vocoder.training.context import TrainingComponents
 
 
 def scheduler_should_step(

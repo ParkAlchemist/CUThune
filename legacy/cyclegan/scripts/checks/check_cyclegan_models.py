@@ -1,20 +1,14 @@
 from pathlib import Path
 import sys
 
+from legacy.cyclegan.models.cyclegan import GeneratorConfig, DiscriminatorConfig, AudioResnetGenerator, \
+    PatchGANDiscriminator, MultiScalePatchGANDiscriminator, describe_model
+
 THIS_FILE = Path(__file__).resolve()
 PROJECT_ROOT = THIS_FILE.parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 import torch
-
-from src.models.cyclegan import (
-    GeneratorConfig,
-    DiscriminatorConfig,
-    AudioResnetGenerator,
-    PatchGANDiscriminator,
-    MultiScalePatchGANDiscriminator,
-    describe_model,
-)
 
 
 def main() -> None:

@@ -5,14 +5,9 @@ from dataclasses import dataclass
 import torch
 import torch.nn as nn
 
-from vocoder.src.nes_vocoder.models.src.losses import (
-    VocoderLossBundle,
-    compute_vocoder_discriminator_loss,
-    compute_vocoder_generator_loss,
-    detach_vocoder_loss_dict, discriminator_family_losses, family_balanced_discriminator_loss,
-)
-from vocoder.src.nes_vocoder.models.src.losses.vocoder.metrics import generator_loss_metrics, discriminator_loss_metrics
-from vocoder.src.nes_vocoder.models.src.losses import generator_family_adversarial_losses
+from vocoder.src.nes_vocoder.losses.components.metrics import generator_loss_metrics, discriminator_loss_metrics
+from vocoder.src.nes_vocoder.losses.objective import VocoderLossBundle, compute_vocoder_generator_loss, \
+    family_balanced_discriminator_loss, discriminator_family_losses
 from vocoder.src.nes_vocoder.training.logging import (
     discriminator_branch_metrics,
     discriminator_health_metrics,

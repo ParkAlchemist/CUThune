@@ -1,6 +1,6 @@
 import torch
 
-from src.training.replay_buffer import ReplayBuffer
+from legacy.cyclegan.src.replay_buffer import ReplayBuffer
 
 
 def test_replay_buffer_preserves_shape_and_device_cpu():

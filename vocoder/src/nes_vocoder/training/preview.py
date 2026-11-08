@@ -9,7 +9,8 @@ import soundfile as sf
 import torch
 from matplotlib import pyplot as plt
 
-from src.eval.vocoder_diagnostics import create_diagnostic_figure, audio_to_cqt_norm, audio_to_stft_db
+from vocoder.src.nes_vocoder.eval.vocoder_diagnostics import create_diagnostic_figure, audio_to_cqt_norm, \
+    audio_to_stft_db
 
 
 def tensor_to_audio_np(x: torch.Tensor) -> np.ndarray:

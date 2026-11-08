@@ -7,7 +7,7 @@ from typing import Any
 import torch
 
 from vocoder.src.nes_vocoder.config.schema import VocoderExperimentConfig
-from vocoder.src.nes_vocoder.models.src.losses import VocoderLossBundle
+from vocoder.src.nes_vocoder.losses.objective import VocoderLossBundle
 from vocoder.src.nes_vocoder.training.metrics import ScalarMetricAccumulator
 from vocoder.src.nes_vocoder.training.step import (
     VocoderModels,

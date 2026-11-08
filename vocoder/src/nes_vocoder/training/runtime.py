@@ -11,7 +11,7 @@ from vocoder.src.nes_vocoder.config.schema import (
     ControlConfig,
     VocoderExperimentConfig,
 )
-from src.training.vocoder import RunPaths
+from vocoder.src.nes_vocoder.training.context import RunPaths
 
 
 class StopController:

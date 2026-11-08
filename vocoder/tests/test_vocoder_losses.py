@@ -4,28 +4,29 @@ import pytest
 import torch
 import torch.nn.functional as F
 
-from vocoder.src.nes_vocoder.config.schema import MRSTFTConfig, RMSEnvelopeLossConfig, BandPowerLossConfig, SpectralFlatnessLossConfig, \
-    DCOffsetLossConfig
-from vocoder.src.nes_vocoder.models.src.losses import (
-    VocoderLossConfig,
-    VocoderLossBundle,
-    compute_vocoder_discriminator_loss,
-    family_balanced_discriminator_loss, )
-from vocoder.src.nes_vocoder.models.src.losses.vocoder.metrics import generator_loss_metrics, discriminator_loss_metrics, \
-    generator_loss_contribution_metrics
-from vocoder.src.nes_vocoder.models.src.losses import family_balanced_generator_adversarial_loss
-from vocoder.src.nes_vocoder.models.src.losses.vocoder.feature_matching_loss import mean_enabled_families, \
-    family_balanced_feature_matching_loss, feature_matching_loss
-from vocoder.src.nes_vocoder.models.src.losses.vocoder.dc_offset_loss import MultiScaleDCOffsetLoss
-from vocoder.src.nes_vocoder.models.src.losses import MultiScaleTemporalGradientLoss, MultiScaleSlewEnvelopeLoss
-from vocoder.src.nes_vocoder.models.src.losses import log_spectral_flatness, SubBandSpectralFlatnessLoss
-from vocoder.src.nes_vocoder.models.src.losses import build_log_frequency_filterbank, MultiResolutionBandPowerLoss
-from vocoder.src.nes_vocoder.models.src.losses import MultiScaleRMSEnvelopeLoss
-from vocoder.src.nes_vocoder.models.src.losses.vocoder.mrstft_loss import SingleResolutionSTFTLoss, MultiResolutionSTFTLoss
-from tests.helpers.vocoder_loss_helpers import make_test_generator_loss_output, make_multi_family_discriminator_outputs, \
-    make_discriminator_family, \
-    assert_family_loss_output_consistent, assert_family_discriminator_loss_consistent, make_test_spectral_flatness_loss, \
-    make_test_cqt_loss, make_test_rail_occupancy_loss
+from vocoder.src.nes_vocoder.config.schema import MRSTFTConfig, RMSEnvelopeLossConfig, BandPowerLossConfig, \
+    SpectralFlatnessLossConfig, \
+    DCOffsetLossConfig, VocoderLossConfig
+from vocoder.src.nes_vocoder.losses.components.adversarial_loss import family_balanced_generator_adversarial_loss
+from vocoder.src.nes_vocoder.losses.components.band_power_loss import build_log_frequency_filterbank, \
+    MultiResolutionBandPowerLoss
+from vocoder.src.nes_vocoder.losses.components.dc_offset_loss import MultiScaleDCOffsetLoss
+from vocoder.src.nes_vocoder.losses.components.feature_matching_loss import feature_matching_loss, \
+    mean_enabled_families, family_balanced_feature_matching_loss
+from vocoder.src.nes_vocoder.losses.components.metrics import generator_loss_contribution_metrics, \
+    generator_loss_metrics, discriminator_loss_metrics
+from vocoder.src.nes_vocoder.losses.components.mrstft_loss import MultiResolutionSTFTLoss, SingleResolutionSTFTLoss
+from vocoder.src.nes_vocoder.losses.components.rms_envelope_loss import MultiScaleRMSEnvelopeLoss
+from vocoder.src.nes_vocoder.losses.components.spectral_flatness_loss import log_spectral_flatness, \
+    SubBandSpectralFlatnessLoss
+from vocoder.src.nes_vocoder.losses.components.temporal_gradient_loss import MultiScaleTemporalGradientLoss, \
+    MultiScaleSlewEnvelopeLoss
+from vocoder.src.nes_vocoder.losses.objective import VocoderLossBundle, compute_vocoder_discriminator_loss, \
+    family_balanced_discriminator_loss
+from vocoder.tests.helpers.vocoder_loss_helpers import make_test_generator_loss_output, make_discriminator_family, \
+    make_multi_family_discriminator_outputs, assert_family_loss_output_consistent, \
+    assert_family_discriminator_loss_consistent, make_test_spectral_flatness_loss, make_test_cqt_loss, \
+    make_test_rail_occupancy_loss
 
 
 def test_mrstft_loss_finite():
@@ -435,7 +436,7 @@ def test_structured_mrstft_matches_legacy_scalar() -> None:
     legacy_resolution_totals = []
 
     for single_loss in loss_function.losses:
-        convergence, log_magnitude = (
+        convergence, log_magnitude, _, _, _ = (
             single_loss(fake, real)
         )
 
@@ -1659,7 +1660,7 @@ def test_spectral_convergence_averages_per_example() -> None:
         ]
     )
 
-    actual = (
+    actual, _, _, _ = (
         SingleResolutionSTFTLoss
         ._stft_spectral_convergence(
             fake,
@@ -1700,7 +1701,7 @@ def test_spectral_convergence_is_stable_for_silent_target() -> None:
 
     real = torch.zeros_like(fake)
 
-    loss = (
+    loss, _, _, _ = (
         SingleResolutionSTFTLoss
         ._stft_spectral_convergence(
             fake,
@@ -1728,7 +1729,7 @@ def test_spectral_convergence_ignores_fully_silent_reference() -> None:
 
     real = torch.zeros_like(fake)
 
-    loss = (
+    loss, _, _, _ = (
         SingleResolutionSTFTLoss
         ._stft_spectral_convergence(
             fake,
@@ -1756,7 +1757,7 @@ def test_spectral_convergence_matches_standard_formula_for_active_target() -> No
 
     fake = real + 0.25
 
-    actual = (
+    actual, _, _, _ = (
         SingleResolutionSTFTLoss
         ._stft_spectral_convergence(
             fake,
@@ -1800,7 +1801,7 @@ def test_spectral_convergence_downweights_quiet_reference() -> None:
 
     fake = real + 0.1
 
-    loss = (
+    loss, _, _, _ = (
         SingleResolutionSTFTLoss
         ._stft_spectral_convergence(
             fake,
@@ -1826,7 +1827,7 @@ def test_silent_example_does_not_dominate_active_example() -> None:
     fake[0] += 0.1
     fake[1] += 10.0
 
-    mixed_loss = (
+    mixed_loss, _, _, _ = (
         SingleResolutionSTFTLoss
         ._stft_spectral_convergence(
             fake,
@@ -1835,7 +1836,7 @@ def test_silent_example_does_not_dominate_active_example() -> None:
         )
     )
 
-    active_only_loss = (
+    active_only_loss, _, _, _ = (
         SingleResolutionSTFTLoss
         ._stft_spectral_convergence(
             fake[:1],

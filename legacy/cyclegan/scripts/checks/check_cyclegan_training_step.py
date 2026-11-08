@@ -1,6 +1,11 @@
 from pathlib import Path
 import sys
 
+from legacy.cyclegan.losses.cyclegan_losses import CycleGANLossConfig, build_cyclegan_loss_bundle
+from legacy.cyclegan.models.cyclegan import GeneratorConfig, DiscriminatorConfig, AudioResnetGenerator, \
+    PatchGANDiscriminator
+from legacy.cyclegan.src.cyclegan_step import CycleGANModels, CycleGANOptimizers, cyclegan_train_step
+
 THIS_FILE = Path(__file__).resolve()
 PROJECT_ROOT = THIS_FILE.parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -8,21 +13,6 @@ sys.path.insert(0, str(PROJECT_ROOT))
 import torch
 
 from cut.src.nes_cut.data.unpaired_dataset import build_unpaired_cqt_dataloader
-from src.models.cyclegan import (
-    GeneratorConfig,
-    DiscriminatorConfig,
-    AudioResnetGenerator,
-    PatchGANDiscriminator,
-)
-from vocoder.src.nes_vocoder.models.src.losses.cyclegan_losses import (
-    CycleGANLossConfig,
-    build_cyclegan_loss_bundle,
-)
-from vocoder.src.nes_vocoder.models.src.training.cyclegan_step import (
-    CycleGANModels,
-    CycleGANOptimizers,
-    cyclegan_train_step,
-)
 
 
 def main() -> None:

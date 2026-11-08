@@ -1,11 +1,7 @@
 import numpy as np
 import torch
 
-from src.eval.vocoder_diagnostics import (
-    tensor_to_audio_np,
-    tensor_to_cqt_np,
-    normalize_path_string,
-)
+from vocoder.src.nes_vocoder.eval.vocoder_diagnostics import tensor_to_audio_np, tensor_to_cqt_np, normalize_path_string
 
 
 def test_tensor_to_audio_np_shapes():

@@ -1,12 +1,12 @@
 import torch
 
-from src.models.blocks import ConvNormAct
-from src.models.blocks import DownsampleBlock
-from src.models.blocks import UpsampleBlock
-from src.models.blocks import ResidualBlock
-from src.models.blocks import SpatialSelfAttention
-from src.models.blocks import PatchDiscriminatorBlock
-from src.models.blocks import SqueezeExciteBlock
+from cut.src.nes_cut.models.blocks.patch_discriminator import PatchDiscriminatorBlock
+from shared.src.chiptune_shared.nn.blocks.channel_attention import SqueezeExciteBlock
+from shared.src.chiptune_shared.nn.blocks.conv_norm_act import ConvNormAct
+from shared.src.chiptune_shared.nn.blocks.downsample import DownsampleBlock
+from shared.src.chiptune_shared.nn.blocks.residual import ResidualBlock
+from shared.src.chiptune_shared.nn.blocks.spatial_attention import SpatialSelfAttention
+from shared.src.chiptune_shared.nn.blocks.upsample import UpsampleBlock
 from shared.src.chiptune_shared.nn.model_utils import CQTBufferPad, get_padding_layer
 
 

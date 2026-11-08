@@ -5,24 +5,14 @@ import torch
 from vocoder.src.nes_vocoder.training.builders import (
     build_training_components,
 )
-from vocoder.src.nes_vocoder.models.src.training.vocoder.data import (
-    build_dataloaders,
-    collect_overfit_batches,
-    save_overfit_debug_data,
-)
-from src.training.vocoder import (
-    TrainingRuntime,
-)
-from vocoder.src.nes_vocoder.models.src.training.vocoder.runtime import (
-    build_run_paths,
-    create_run_directories,
-    configure_stop_controller,
-)
+from vocoder.src.nes_vocoder.training.context import TrainingRuntime
+from vocoder.src.nes_vocoder.training.data import build_dataloaders, collect_overfit_batches, save_overfit_debug_data
 from vocoder.src.nes_vocoder.training.logging import (
     write_model_manifest,
     write_model_structure,
     write_torchinfo_generator_summary, )
 from vocoder.src.nes_vocoder.training.metrics import ScalarMetricAccumulator
+from vocoder.src.nes_vocoder.training.runtime import build_run_paths, create_run_directories, configure_stop_controller
 
 
 def build_training_runtime(

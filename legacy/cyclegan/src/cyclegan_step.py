@@ -3,17 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 from contextlib import nullcontext
-from src.training.replay_buffer import ReplayBuffer
 
 import torch
 import torch.nn as nn
 
-from vocoder.src.nes_vocoder.models.src.losses.cyclegan_losses import (
-    CycleGANLossBundle,
-    compute_generator_losses,
-    compute_discriminator_loss,
-    inject_gaussian_noise,
-)
+from legacy.cyclegan.losses.cyclegan_losses import CycleGANLossBundle, inject_gaussian_noise, compute_generator_losses, \
+    compute_discriminator_loss
+from legacy.cyclegan.src.replay_buffer import ReplayBuffer
 
 
 @dataclass

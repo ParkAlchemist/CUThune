@@ -1,12 +1,8 @@
 import pytest
 import torch
 
-from src.models.cyclegan import (
-    GeneratorConfig,
-    DiscriminatorConfig,
-    AudioResnetGenerator,
-    PatchGANDiscriminator,
-)
+from legacy.cyclegan.models.cyclegan import AudioResnetGenerator, GeneratorConfig, PatchGANDiscriminator, \
+    DiscriminatorConfig
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA not available")

@@ -2,12 +2,9 @@ import pytest
 import torch
 from torch import nn
 
+from shared.src.chiptune_shared.nn.blocks.convnext import ConvNeXtContextTrunk1d
+from shared.src.chiptune_shared.nn.blocks.temporal_attention import RotaryPositionEmbedding, RoPETemporalSelfAttention1d
 from vocoder.src.nes_vocoder.config.schema import ContextAttentionConfig
-from src.models.blocks import ConvNeXtContextTrunk1d
-from src.models.blocks import (
-    RotaryPositionEmbedding,
-    RoPETemporalSelfAttention1d,
-)
 
 
 def test_rope_preserves_shape_and_norm() -> None:

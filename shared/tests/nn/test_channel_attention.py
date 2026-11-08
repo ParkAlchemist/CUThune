@@ -1,12 +1,9 @@
 import pytest
 import torch
 
+from shared.src.chiptune_shared.nn.blocks.channel_attention import compute_eca_kernel_size, ECABlock1d, ECABlock2d, \
+    ECAChannelGate
 from vocoder.src.nes_vocoder.config.schema import VocoderGeneratorModelConfig
-from src.models.blocks import (
-    ECABlock1d,
-    ECABlock2d,
-    compute_eca_kernel_size, ECAChannelGate,
-)
 from vocoder.src.nes_vocoder.models.generator import CQTUHiFiGANGenerator
 
 

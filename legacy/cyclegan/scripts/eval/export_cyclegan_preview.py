@@ -7,6 +7,10 @@ import json
 import csv
 from typing import Any
 
+from legacy.cyclegan.losses.cyclegan_losses import cqt_to_chroma
+from legacy.cyclegan.models.cyclegan import AudioResnetGenerator, PatchGANDiscriminator, GeneratorConfig, \
+    DiscriminatorConfig
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 runpy.run_path(
@@ -24,13 +28,6 @@ from tqdm import tqdm
 
 from shared.src.chiptune_shared.cqt.cache import CachedCQTTrackDataset
 from cut.src.nes_cut.data.unpaired_dataset import UnpairedCQTDataset
-from src.models.cyclegan import (
-    GeneratorConfig,
-    DiscriminatorConfig,
-    AudioResnetGenerator,
-    PatchGANDiscriminator,
-)
-from vocoder.src.nes_vocoder.models.src.losses.cyclegan_losses import cqt_to_chroma
 
 
 def parse_args() -> argparse.Namespace:

@@ -2,7 +2,7 @@ import pytest
 import torch
 from torch import nn
 
-from src.models.blocks import GlobalResponseNorm1d, ConvNeXtContextBlock1d, \
+from shared.src.chiptune_shared.nn.blocks.convnext import GlobalResponseNorm1d, ConvNeXtContextBlock1d, \
     MultiKernelConvNeXtContextBlock1d
 
 

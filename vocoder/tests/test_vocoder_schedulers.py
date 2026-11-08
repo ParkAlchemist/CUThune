@@ -4,7 +4,7 @@ import torch
 
 from vocoder.src.nes_vocoder.config.schema import SchedulerConfig
 from vocoder.src.nes_vocoder.training.builders import build_scheduler, build_fixed_floor_cosine_scheduler
-from src.training.vocoder import step_scheduler
+from vocoder.src.nes_vocoder.training.schedulers import step_scheduler
 
 
 def test_build_exponential_scheduler() -> None:

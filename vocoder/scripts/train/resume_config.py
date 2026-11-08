@@ -8,8 +8,8 @@ import sys
 import torch
 
 THIS_FILE = Path(__file__).resolve()
-PROJECT_ROOT = THIS_FILE.parents[2]
-TRAIN_SCRIPT = PROJECT_ROOT / "scripts" / "train" / "train_vocoder.py"
+PROJECT_ROOT = THIS_FILE.parents[3]/ "vocoder"
+TRAIN_SCRIPT = PROJECT_ROOT/ "vocoder" / "scripts" / "train" / "train_vocoder.py"
 
 sys.path.insert(0, str(PROJECT_ROOT))
 

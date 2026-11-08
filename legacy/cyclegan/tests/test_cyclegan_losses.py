@@ -1,14 +1,7 @@
 import torch
 
-from vocoder.src.nes_vocoder.models.src.losses.cyclegan_losses import (
-    GANLoss,
-    ChromaConsistencyLoss,
-    cqt_to_chroma,
-    inject_gaussian_noise,
-    CycleGANLossConfig,
-    build_cyclegan_loss_bundle,
-    compute_discriminator_loss,
-)
+from legacy.cyclegan.losses.cyclegan_losses import GANLoss, cqt_to_chroma, ChromaConsistencyLoss, inject_gaussian_noise, \
+    build_cyclegan_loss_bundle, CycleGANLossConfig, compute_discriminator_loss
 
 
 def test_lsgan_loss_real_and_fake_are_finite():
