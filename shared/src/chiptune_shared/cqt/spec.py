@@ -1,6 +1,22 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import torch
+
+
+@dataclass(frozen=True)
+class CQTSpec:
+    sample_rate: int = 44_100
+    hop_length: int = 256
+    fmin: float = 27.5
+    bins_per_octave: int = 12
+    n_bins: int = 116
+    db_min: float = -80.0
+    db_max: float = 0.0
+    normalized_min: float = -1.0
+    normalized_max: float = 1.0
+    version: str = "cqt-a0-116-v1"
 
 
 def seconds_to_frames(seconds: float, sample_rate: int, hop_length: int) -> int:

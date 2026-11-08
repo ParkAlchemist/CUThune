@@ -388,18 +388,18 @@ class CachedCQTTrackDataset(Dataset):
 
         return item
 
-    def __getitem__(self, idx: int) -> dict[str, Any]:
+    def __getitem__(self, index: int) -> dict[str, Any]:
         last_item: dict[str, Any] | None = None
 
         for attempt in range(self.max_resample_attempts):
-            record_index = self._record_index_for_item(idx)
+            record_index = self._record_index_for_item(index)
 
             # If the selected snippet is too quiet, retry with a random track/window.
             if attempt > 0:
                 record_index = random.randint(0, len(self.records) - 1)
 
             payload, cache_path = self._load_payload(record_index)
-            item = self._make_item_from_payload(payload, cache_path, record_index, idx)
+            item = self._make_item_from_payload(payload, cache_path, record_index, index)
 
             last_item = item
 

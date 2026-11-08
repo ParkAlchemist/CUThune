@@ -1,0 +1,24 @@
+[experiment]
+name = "cut_smoke"
+seed = 1234
+
+[data]
+frames = 688
+batch_size = 2
+num_workers = 0
+
+[model]
+base_channels = 16
+bottleneck_channels = 64
+num_blocks = 2
+
+[patchnce]
+layers = ["down_1", "down_2", "bottleneck_1"]
+projection_dim = 64
+num_patches = 32
+temperature = 0.07
+
+[training]
+amp = false
+max_steps = 10
+
