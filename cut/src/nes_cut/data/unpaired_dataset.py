@@ -197,7 +197,7 @@ class UnpairedCQTDataset(Dataset[dict[str, Any]]):
             "target_cache_path": str(target_item["cache_path"]),
 
             "source_path": str(source_item["source_path"]) if source_item.get("source_path") is not None else None,
-            "target_path": str(target_item["target_path"]) if target_item.get("target_path") is not None else None,
+            "target_path": str(target_item["source_path"]) if target_item.get("source_path") is not None else None,
 
             "source_valid_mask": torch.ones(self.expected_shape[-1], dtype=torch.bool),
             "target_valid_mask": torch.ones(self.expected_shape[-1], dtype=torch.bool),
