@@ -166,6 +166,7 @@ def build_training_components(
     scaler_enabled = (
         config.amp.enabled
         and device.type == "cuda"
+        and config.amp.dtype != "bfloat16"
     )
 
     scaler = torch.amp.GradScaler(

@@ -49,6 +49,13 @@ def zero_vocoder_gradients(
     )
 
 
+def require_finite(name: str, tensor: torch.Tensor) -> None:
+    if not bool(torch.isfinite(tensor.detach()).all()):
+        raise FloatingPointError(
+            f"Non-finite tensor detected: {name}"
+        )
+
+
 def vocoder_train_micro_step(
         *,
         batch: dict,
@@ -69,7 +76,7 @@ def vocoder_train_micro_step(
     cqt = batch["cqt"].to(device, non_blocking=True)
     real_audio = batch["audio"].to(device, non_blocking=True)
 
-    autocast_dtype = {"float16": torch.float16, "float32": torch.float32}[dtype]
+    autocast_dtype = {"float16": torch.float16, "float32": torch.float32, "bfloat16": torch.bfloat16}[dtype]
     autocast_enabled = (use_amp and device.type == "cuda")
 
     #--------------------------------------------------------
@@ -84,8 +91,8 @@ def vocoder_train_micro_step(
             fake_audio_for_d = generator(cqt)
 
         discriminator_outputs_d = discriminator(
-            real_audio,
-            fake=fake_audio_for_d.detach(),
+            real_audio.float(),
+            fake=fake_audio_for_d.detach().float(),
         )
 
         discriminator_losses = family_balanced_discriminator_loss(discriminator_outputs_d)
@@ -115,6 +122,8 @@ def vocoder_train_micro_step(
         loss_d_total = discriminator_losses.total
         loss_d_backward = loss_d_total / loss_divisor
 
+    require_finite("loss_d_backward", loss_d_backward)
+
     if scaler is not None and use_amp:
         scaler.scale(loss_d_backward).backward()
     else:
@@ -134,18 +143,20 @@ def vocoder_train_micro_step(
             fake_audio_for_g = generator(cqt)
 
             discriminator_outputs_g = discriminator(
-                real_audio,
-                fake=fake_audio_for_g,
+                real_audio.float(),
+                fake=fake_audio_for_g.float(),
             )
 
             generator_losses = compute_vocoder_generator_loss(
                 discriminator_outputs=discriminator_outputs_g,
-                fake_audio=fake_audio_for_g,
-                real_audio=real_audio,
+                fake_audio=fake_audio_for_g.float(),
+                real_audio=real_audio.float(),
                 loss_bundle=loss_bundle,
             )
 
         generator_backward_loss = generator_losses.total / loss_divisor
+
+        require_finite("generator_backward_loss", generator_backward_loss)
 
         if scaler is not None and use_amp:
             scaler.scale(generator_backward_loss).backward()
@@ -213,48 +224,79 @@ def vocoder_train_micro_step(
     return VocoderMicroStepResult(losses=losses, batch_size=int(cqt.shape[0]))
 
 
+def gradients_are_finite(module: torch.nn.Module) -> bool:
+    return all(
+        param.grad is None
+        or bool(torch.isfinite(param.grad).all())
+        for param in module.parameters()
+    )
+
+
 def finish_vocoder_optimizer_step(
-        *,
-        models: VocoderModels,
-        optimizers: VocoderOptimizers,
-        scaler: torch.amp.GradScaler | None = None,
-        use_amp: bool = False,
-        grad_clip_generator: float | None = None,
-        grad_clip_discriminator: float | None = None,
+    *,
+    models: VocoderModels,
+    optimizers: VocoderOptimizers,
+    scaler: torch.amp.GradScaler | None = None,
+    use_amp: bool = False,
+    grad_clip_generator: float | None = None,
+    grad_clip_discriminator: float | None = None,
 ) -> dict[str, float | None]:
 
-    generator_grad_norm: float = 0.0
-    discriminator_grad_norm: float = 0.0
+    generator_grad_norm = 0.0
+    discriminator_grad_norm = 0.0
 
-    if scaler is not None and use_amp:
+    amp_enabled = scaler is not None and use_amp
+
+    if amp_enabled:
         scaler.unscale_(optimizers.generator)
         scaler.unscale_(optimizers.discriminator)
 
-    if grad_clip_generator is not None:
-        generator_grad_norm_tensor = (
-            torch.nn.utils.clip_grad_norm_(
-                models.generator.parameters(),
-                max_norm=grad_clip_generator,
-            )
-        )
+    generator_finite = gradients_are_finite(models.generator)
+    discriminator_finite = gradients_are_finite(models.discriminator)
+    gradients_finite = generator_finite and discriminator_finite
 
+    if not gradients_finite:
+        # Keep the GAN pair synchronized: neither optimizer steps.
+        if amp_enabled:
+            # unscale_() registered the overflow state, so update() can
+            # reduce the scale even though scaler.step() is not called.
+            scaler.update()
+
+        optimizers.discriminator.zero_grad(set_to_none=True)
+        optimizers.generator.zero_grad(set_to_none=True)
+
+        return {
+            "grad_norm_generator": None,
+            "grad_norm_discriminator": None,
+            "optimizer_step_skipped": 1.0,
+            "generator_grad_finite": float(generator_finite),
+            "discriminator_grad_finite": float(discriminator_finite),
+            "amp_scale": (
+                float(scaler.get_scale()) if amp_enabled else None
+            ),
+        }
+
+    if grad_clip_generator is not None:
+        generator_grad_norm_tensor = torch.nn.utils.clip_grad_norm_(
+            models.generator.parameters(),
+            max_norm=grad_clip_generator,
+            error_if_nonfinite=True,
+        )
         generator_grad_norm = float(
             generator_grad_norm_tensor.detach().cpu()
         )
 
     if grad_clip_discriminator is not None:
-        discriminator_grad_norm_tensor = (
-            torch.nn.utils.clip_grad_norm_(
-                models.discriminator.parameters(),
-                max_norm=grad_clip_discriminator,
-            )
+        discriminator_grad_norm_tensor = torch.nn.utils.clip_grad_norm_(
+            models.discriminator.parameters(),
+            max_norm=grad_clip_discriminator,
+            error_if_nonfinite=True,
         )
-
         discriminator_grad_norm = float(
             discriminator_grad_norm_tensor.detach().cpu()
         )
 
-    if scaler is not None and use_amp:
+    if amp_enabled:
         scaler.step(optimizers.discriminator)
         scaler.step(optimizers.generator)
         scaler.update()
@@ -266,8 +308,14 @@ def finish_vocoder_optimizer_step(
     optimizers.generator.zero_grad(set_to_none=True)
 
     return {
-        "grad_norm_generator": float(generator_grad_norm),
-        "grad_norm_discriminator": float(discriminator_grad_norm),
+        "grad_norm_generator": generator_grad_norm,
+        "grad_norm_discriminator": discriminator_grad_norm,
+        "optimizer_step_skipped": 0.0,
+        "generator_grad_finite": 1.0,
+        "discriminator_grad_finite": 1.0,
+        "amp_scale": (
+            float(scaler.get_scale()) if amp_enabled else None
+        ),
     }
 
 
