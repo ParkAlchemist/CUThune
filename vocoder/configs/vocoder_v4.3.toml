@@ -16,7 +16,7 @@ fmin = 27.5
 
 segment_frames = 128
 windows_per_track = 8
-batch_size = 4
+batch_size = 8
 num_workers = 4
 cache_waveforms = 16
 pin_memory = true
@@ -271,7 +271,7 @@ eta_min = 1e-5
 
 [training]
 epochs = 500
-gradient_accumulation_steps = 2
+gradient_accumulation_steps = 1
 grad_clip_generator = 10.0
 grad_clip_discriminator = 10.0
 

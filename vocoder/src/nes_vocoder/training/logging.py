@@ -12,8 +12,8 @@ import time
 import torch
 import torch.nn as nn
 
-from shared.src.chiptune_shared.nn.blocks.convnext import ConvNeXtContextBlock1d, MultiKernelConvNeXtContextBlock1d, \
-    GlobalResponseNorm1d
+from shared.src.chiptune_shared.nn.blocks.convnext import ConvNeXtContextBlock1d, MultiKernelConvNeXtContextBlock1d
+from shared.src.chiptune_shared.nn.blocks.global_response_norm import GlobalResponseNorm1d
 from shared.src.chiptune_shared.nn.blocks.temporal_attention import RoPETemporalSelfAttention1d
 from vocoder.src.nes_vocoder.config.schema import VocoderExperimentConfig
 from typing import TYPE_CHECKING
