@@ -242,7 +242,6 @@ class AudioResnetGenerator(nn.Module):
                 padding_mode=config.padding_mode,
                 norm=config.norm,
                 activation="relu",
-                dropout=0.0,
             )
         )
 
@@ -257,7 +256,6 @@ class AudioResnetGenerator(nn.Module):
                     norm=config.norm,
                     activation="relu",
                     padding_mode=config.padding_mode,
-                    dropout=config.encoder_dropout,
                     spectral_norm=False,
                 )
             )
@@ -283,7 +281,6 @@ class AudioResnetGenerator(nn.Module):
                     norm=config.norm,
                     activation="relu",
                     padding_mode=config.padding_mode,
-                    dropout=config.decoder_dropout,
                     upsample_mode=config.upsample_mode,
                 )
             )
@@ -303,7 +300,6 @@ class AudioResnetGenerator(nn.Module):
                 padding_mode=config.padding_mode,
                 norm="none",
                 activation="none",
-                dropout=0.0,
             )
         ]
 
