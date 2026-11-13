@@ -1,9 +1,10 @@
 import torch
+from torch import nn
 
 from cut.src.nes_cut.models.blocks.patch_discriminator import PatchDiscriminatorBlock
 from shared.src.chiptune_shared.nn.blocks.channel_attention import SqueezeExciteBlock
 from shared.src.chiptune_shared.nn.blocks.conv_norm_act import ConvNormAct
-from shared.src.chiptune_shared.nn.blocks.downsample import DownsampleBlock
+from shared.src.chiptune_shared.nn.blocks.downsample import DownsampleBlock, PixelUnshuffle
 from shared.src.chiptune_shared.nn.blocks.residual import ResidualBlock
 from shared.src.chiptune_shared.nn.blocks.spatial_attention import SpatialSelfAttention
 from shared.src.chiptune_shared.nn.blocks.upsample import UpsampleBlock
@@ -129,3 +130,14 @@ def test_patch_discriminator_block_shape():
     assert y.shape[0] == 2
     assert y.shape[1] == 32
 
+
+def test_custom_pixel_unshuffle_matches_pytorch():
+    custom = PixelUnshuffle(ratio=2)
+    reference = nn.PixelUnshuffle(2)
+
+    x = torch.randn(2, 3, 8, 12)
+
+    torch.testing.assert_close(
+        custom(x),
+        reference(x),
+    )

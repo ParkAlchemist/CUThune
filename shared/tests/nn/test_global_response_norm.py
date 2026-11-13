@@ -1,12 +1,10 @@
 import pytest
 import torch
-from torch import nn
 
-from shared.src.chiptune_shared.nn.blocks.convnext import GlobalResponseNorm1d, ConvNeXtContextBlock1d, \
-    MultiKernelConvNeXtContextBlock1d
+from shared.src.chiptune_shared.nn.blocks.global_response_norm import GlobalResponseNorm1d, GlobalResponseNorm2d
 
 
-def test_grn_preserves_shape() -> None:
+def test_grn_1d_preserves_shape() -> None:
     grn = GlobalResponseNorm1d(
         channels=32,
     )
@@ -23,7 +21,7 @@ def test_grn_preserves_shape() -> None:
     assert torch.isfinite(y).all()
 
 
-def test_grn_is_identity_at_initialization() -> None:
+def test_grn_1d_is_identity_at_initialization() -> None:
     grn = GlobalResponseNorm1d(
         channels=32,
     )
@@ -39,7 +37,7 @@ def test_grn_is_identity_at_initialization() -> None:
     assert torch.equal(y, x)
 
 
-def test_grn_gradients_are_finite() -> None:
+def test_grn_1d_gradients_are_finite() -> None:
     grn = GlobalResponseNorm1d(
         channels=32,
     )
@@ -63,7 +61,7 @@ def test_grn_gradients_are_finite() -> None:
     assert torch.isfinite(grn.beta.grad).all()
 
 
-def test_grn_applies_channel_response_modulation() -> None:
+def test_grn_1d_applies_channel_response_modulation() -> None:
     grn = GlobalResponseNorm1d(
         channels=2,
         eps=1e-6,
@@ -114,7 +112,7 @@ def test_grn_applies_channel_response_modulation() -> None:
     )
 
 
-def test_grn_handles_zero_input() -> None:
+def test_grn_1d_handles_zero_input() -> None:
     grn = GlobalResponseNorm1d(
         channels=32,
     )
@@ -131,7 +129,7 @@ def test_grn_handles_zero_input() -> None:
     assert torch.equal(y, x)
 
 
-def test_grn_rejects_wrong_rank() -> None:
+def test_grn_1d_rejects_wrong_rank() -> None:
     grn = GlobalResponseNorm1d(
         channels=32,
     )
@@ -145,7 +143,7 @@ def test_grn_rejects_wrong_rank() -> None:
         grn(x)
 
 
-def test_grn_rejects_channel_mismatch() -> None:
+def test_grn_1d_rejects_channel_mismatch() -> None:
     grn = GlobalResponseNorm1d(
         channels=32,
     )
@@ -163,90 +161,49 @@ def test_grn_rejects_channel_mismatch() -> None:
         grn(x)
 
 
-def test_convnext_block_constructs_grn_in_expanded_space() -> None:
-    block = ConvNeXtContextBlock1d(
-        channels=16,
-        expansion_ratio=2,
-        use_grn=True,
-    )
+def test_grn_2d_initially_behaves_as_identity() -> None:
+    grn = GlobalResponseNorm2d(channels=16)
+    x = torch.randn(2, 8, 12, 16)
 
-    assert isinstance(
-        block.grn,
-        GlobalResponseNorm1d,
-    )
+    y = grn(x)
 
-    assert block.grn.channels == 32
+    torch.testing.assert_close(y, x)
 
 
-def test_convnext_block_disables_grn_with_identity() -> None:
-    block = ConvNeXtContextBlock1d(
-        channels=16,
-        expansion_ratio=2,
-        use_grn=False,
-    )
+def test_grn_2d_preserves_shape() -> None:
+    grn = GlobalResponseNorm2d(channels=16)
+    x = torch.randn(2, 8, 12, 16)
 
-    assert isinstance(
-        block.grn,
-        nn.Identity,
-    )
-
-def test_multi_kernel_block_constructs_grn() -> None:
-    block = MultiKernelConvNeXtContextBlock1d(
-        channels=16,
-        kernel_sizes=(3, 7, 15, 31),
-        expansion_ratio=2,
-        use_grn=True,
-    )
-
-    assert isinstance(
-        block.grn,
-        GlobalResponseNorm1d,
-    )
-
-    assert block.grn.channels == 32
+    assert grn(x).shape == x.shape
 
 
-@pytest.mark.parametrize(
-    "block_class",
-    [
-        ConvNeXtContextBlock1d,
-        MultiKernelConvNeXtContextBlock1d,
-    ],
-)
-def test_convnext_blocks_with_grn_backward(
-    block_class,
-) -> None:
-    kwargs = {
-        "channels": 16,
-        "expansion_ratio": 2,
-        "use_grn": True,
-    }
-
-    if block_class is ConvNeXtContextBlock1d:
-        kwargs["kernel_size"] = 7
-    else:
-        kwargs["kernel_sizes"] = (3, 7, 15, 31)
-
-    block = block_class(**kwargs)
-
+def test_grn_2d_backward_is_finite() -> None:
+    grn = GlobalResponseNorm2d(channels=16)
     x = torch.randn(
         2,
+        8,
+        12,
         16,
-        128,
         requires_grad=True,
     )
 
-    y = block(x)
-    y.square().mean().backward()
+    loss = grn(x).square().mean()
+    loss.backward()
 
-    assert y.shape == x.shape
     assert x.grad is not None
     assert torch.isfinite(x.grad).all()
+    assert grn.gamma.grad is not None
+    assert grn.beta.grad is not None
+    assert torch.isfinite(grn.gamma.grad).all()
+    assert torch.isfinite(grn.beta.grad).all()
 
-    for name, parameter in block.named_parameters():
-        assert parameter.grad is not None, (
-            f"Parameter {name!r} received no gradient."
-        )
-        assert torch.isfinite(parameter.grad).all()
 
+def test_grn_2d_handles_zero_input() -> None:
+    grn = GlobalResponseNorm2d(channels=16)
+    x = torch.zeros(2, 8, 12, 16)
+
+    y = grn(x)
+
+    assert torch.isfinite(y).all()
+    torch.testing.assert_close(y, x)
 

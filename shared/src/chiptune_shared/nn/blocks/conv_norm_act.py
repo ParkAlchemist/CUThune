@@ -18,7 +18,7 @@ class ConvNormAct(nn.Module):
     """
     Generic 2D convolution block:
 
-    Padding -> Conv2d -> Norm -> Activation -> optional Dropout2d
+    Padding -> Conv2d -> Norm -> Activation
 
     Use this for both generator and discriminator building blocks.
 
@@ -43,9 +43,9 @@ class ConvNormAct(nn.Module):
         stride: int = 1,
         padding: int | None = None,
         padding_mode: PaddingMode = "reflect",
+        padding_value: float = 0.0,
         norm: NormType = "instance",
         activation: ActivationType = "relu",
-        dropout: float = 0.0,
         bias: bool | None = None,
         spectral_norm: bool = False,
         norm_affine: bool = True,
@@ -60,7 +60,7 @@ class ConvNormAct(nn.Module):
         if bias is None:
             bias = norm == "none"
 
-        self.pad = get_padding_layer(padding, padding_mode)
+        self.pad = get_padding_layer(padding, padding_mode, padding_value)
 
         conv = nn.Conv2d(
             in_channels=in_channels,
@@ -85,14 +85,11 @@ class ConvNormAct(nn.Module):
             negative_slope = negative_slope,
         )
 
-        self.dropout = nn.Dropout2d(dropout) if dropout > 0 else nn.Identity()
-
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.pad(x)
         x = self.conv(x)
         x = self.norm(x)
         x = self.activation(x)
-        x = self.dropout(x)
         return x
 

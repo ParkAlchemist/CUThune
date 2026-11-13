@@ -5,78 +5,9 @@ import torch.nn as nn
 
 from collections.abc import Sequence
 
+from shared.src.chiptune_shared.nn.blocks.global_response_norm import GlobalResponseNorm1d, GlobalResponseNorm2d
 from shared.src.chiptune_shared.nn.blocks.temporal_attention import RoPETemporalSelfAttention1d
 from vocoder.src.nes_vocoder.config.schema import ContextAttentionConfig
-
-
-class GlobalResponseNorm1d(nn.Module):
-    """
-    Global Response Normalization Layer for channel last temporal tensors.
-
-    Expected Input:
-        [B, T, C]
-
-    GRN computes a global L2 response over time for each channel,
-    normalizes responses relative to their channel-wise mean, and
-    applies a learned residual modulation:
-
-        y = x + gamma * (x * normalized_response) + beta
-
-    gamma and beta are initialized to zero, so GRN begins as an
-    exact identity mapping.
-    """
-    def __init__(
-            self,
-            channels: int,
-            *,
-            eps: float = 1e-6,
-    ) -> None:
-        super().__init__()
-
-        if channels <= 0:
-            raise ValueError(f"channels must be positive, got {channels}")
-
-        if eps <= 0.0:
-            raise ValueError(f"eps must be positive, got {eps}")
-
-        self.channels = channels
-        self.eps = eps
-
-        self.gamma = nn.Parameter(torch.zeros(1, 1, channels, dtype=torch.float32))
-        self.beta = nn.Parameter(torch.zeros(1, 1, channels, dtype=torch.float32))
-
-    def forward(
-            self,
-            x: torch.Tensor,
-    ) -> torch.Tensor:
-        if x.ndim != 3:
-            raise ValueError(f"Input tensor must have 3 dimensions, got {tuple(x.shape)}")
-
-        if x.shape[-1] != self.channels:
-            raise RuntimeError(f"GlobalResponseNorm1d channel mismatch:"
-                               f"expected {self.channels}, got {x.shape[-1]}")
-
-        # Global L2 response over the temporal dimension
-        #
-        # [B, T, C] -> [B, 1, C]
-        global_response = torch.linalg.vector_norm(
-            x,
-            ord=2,
-            dim=1,
-            keepdim=True,
-        )
-
-        # Normalize each channel response relative to the mean response across channels
-        #
-        # [B, 1, C] -> [B, 1, C]
-        mean_response = global_response.mean(
-            dim=-1,
-            keepdim=True,
-        )
-
-        normalized_response = global_response / mean_response.clamp_min(self.eps)
-
-        return x + self.gamma * (x * normalized_response) + self.beta
 
 
 class ConvNeXtContextBlock1d(nn.Module):
@@ -200,6 +131,122 @@ class ConvNeXtContextBlock1d(nn.Module):
                                f"Input: {tuple(res.shape)}, Transformed {tuple(x.shape)}")
 
         return x + res
+
+
+class ConvNeXtContextBlock2d(nn.Module):
+    def __init__(
+            self,
+            channels: int,
+            kernel_size: int = 7,
+            dilation: int = 1,
+            expansion_ratio: int = 2,
+            layer_scale_initial: float = 1e-6,
+            use_grn: bool = False,
+            grn_eps: float = 1e-6,
+    ) -> None:
+        super().__init__()
+
+        if channels <= 0:
+            raise ValueError(f"channels must be positive, got {channels}")
+
+        if kernel_size <= 0:
+            raise ValueError(f"kernel_size must be positive, got {kernel_size}")
+
+        if kernel_size % 2 == 0:
+            raise ValueError(f"kernel_size must be odd, got {kernel_size}")
+
+        if dilation <= 0:
+            raise ValueError(f"dilation must be positive, got {dilation}")
+
+        if expansion_ratio <= 0:
+            raise ValueError(f"expansion_ratio must be positive, got {expansion_ratio}")
+
+        if layer_scale_initial < 0.0:
+            raise ValueError(
+                "layer_scale_initial must be non-negative, "
+                f"got {layer_scale_initial}"
+            )
+
+        self.channels = channels
+        self.kernel_size = kernel_size
+        self.dilation = dilation
+        self.expansion_ratio = expansion_ratio
+        self.layer_scale_initial = layer_scale_initial
+
+        padding = dilation * (kernel_size - 1) // 2
+
+        self.depthwise = nn.Conv2d(
+            in_channels=channels,
+            out_channels=channels,
+            kernel_size=kernel_size,
+            dilation=dilation,
+            padding=padding,
+            groups=channels,
+        )
+
+        self.norm = nn.LayerNorm(normalized_shape=channels)
+
+        expanded_channels = channels * expansion_ratio
+
+        self.expand = nn.Linear(
+            in_features=channels,
+            out_features=expanded_channels,
+        )
+
+        self.activation = nn.GELU()
+
+        if use_grn:
+            self.grn = GlobalResponseNorm2d(
+                channels=expanded_channels,
+                eps=grn_eps,
+            )
+        else:
+            self.grn = nn.Identity()
+
+        self.contract = nn.Linear(
+            in_features=expanded_channels,
+            out_features=channels
+        )
+
+        self.layer_scale = nn.Parameter(
+            torch.full(
+                (channels,),
+                fill_value=layer_scale_initial,
+                dtype=torch.float32,
+            )
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.ndim != 4:
+            raise RuntimeError(f"ConvNeXtContextBlock2d only supports 4 dimensional tensors, "
+                               f"got {tuple(x.shape)}")
+
+        if x.shape[1] != self.channels:
+            raise RuntimeError(f"ConvNeXtContextBlock2d channel mismatch: "
+                               f"expected {self.channels}, got {x.shape[1]}")
+
+        res = x
+
+        x = self.depthwise(x)
+
+        # [B, C, H, W] -> [B, H, W, C]
+        x = x.permute(0, 2, 3, 1)
+
+        x = self.norm(x)
+        x = self.expand(x)
+        x = self.activation(x)
+        x = self.grn(x)
+        x = self.contract(x)
+        x = x * self.layer_scale
+
+        # [B, H, W, C] -> [B, C, H, W]
+        x = x.permute(0, 3, 1, 2)
+
+        if x.shape != res.shape:
+            raise RuntimeError(f"ConvNeXtContextBlock2d forward dim mismatch: "
+                               f"Input: {tuple(res.shape)}, Transformed {tuple(x.shape)}")
+
+        return res + x
 
 
 def _expand_per_block_setting(

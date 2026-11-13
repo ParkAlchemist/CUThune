@@ -85,6 +85,7 @@ class CQTBufferPad(nn.Module):
 def get_padding_layer(
         padding: int | tuple[int, int, int, int],
         padding_mode: PaddingMode = "reflect",
+        freq_pad_value: float = 0.0,
 ) -> nn.Module:
     if padding == 0:
         return nn.Identity()
@@ -101,9 +102,9 @@ def get_padding_layer(
     if padding_mode == "cqt":
         if isinstance(padding, tuple):
             left, right, freq_low, freq_high = padding
-            return CQTBufferPad(left, right, freq_low, freq_high)
+            return CQTBufferPad(left, right, freq_low, freq_high, freq_pad_value)
         if isinstance(padding, int):
-            return CQTBufferPad(padding, padding, padding, padding)
+            return CQTBufferPad(padding, padding, padding, padding, freq_pad_value)
 
     raise ValueError(f"Unknown padding mode: {padding_mode}")
 
