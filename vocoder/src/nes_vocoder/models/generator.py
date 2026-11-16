@@ -275,7 +275,7 @@ class CQTUHiFiGANGenerator(nn.Module):
                 model_config.upsample_initial_channel,
                 kernel_size=7,
                 stride=1,
-                padding=3,
+                padding=0,
             )
         )
 
@@ -397,6 +397,8 @@ class CQTUHiFiGANGenerator(nn.Module):
             raise ValueError(
                 f"Expected CQT shape [B,F,T] or [B,1,F,T], got {tuple(cqt.shape)}"
             )
+
+        cqt = F.pad(cqt, (3, 3), mode="constant", value=-1.0)
 
         x = self.conv_pre(cqt)
 
