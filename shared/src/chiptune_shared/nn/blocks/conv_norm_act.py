@@ -19,20 +19,6 @@ class ConvNormAct(nn.Module):
     Generic 2D convolution block:
 
     Padding -> Conv2d -> Norm -> Activation
-
-    Use this for both generator and discriminator building blocks.
-
-    For generator:
-    norm="instance"
-    activation="relu"
-    padding_mode="reflect"
-    spectral_norm=False
-
-    For discriminator:
-    norm="instance" or "none"
-    activation="leaky_relu"
-    padding_mode="zeros" or "reflect"
-    spectral_norm=True optionally
     """
 
     def __init__(

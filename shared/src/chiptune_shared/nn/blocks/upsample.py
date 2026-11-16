@@ -19,10 +19,6 @@ class UpsampleBlock(nn.Module):
 
     Uses interpolation + convolution by default instead of ConvTranspose2d to
     reduce checkerboard artifacts.
-
-    Note:
-    If input sizes are odd after downsampling, the top-level generator may
-    still need final cropping/padding to exactly match the original input.
     """
     def __init__(
             self,
