@@ -13,7 +13,7 @@ from vocoder.src.nes_vocoder.training.checkpointing import save_checkpoint, prun
 from vocoder.src.nes_vocoder.training.context import TrainingComponents, TrainingState
 from vocoder.src.nes_vocoder.training.logging import (
     collect_context_parameter_metrics,
-    write_status, )
+    write_status, collect_generator_output_parameter_metrics, )
 from vocoder.src.nes_vocoder.training.metrics import split_logging_metrics, log_interval_maxima
 from vocoder.src.nes_vocoder.training.preview import export_preview_wavs
 from vocoder.src.nes_vocoder.training.runtime import derive_training_seed, set_seed
@@ -286,6 +286,12 @@ def run_epoch(
             )
 
             step_metrics.update(
+                collect_generator_output_parameter_metrics(
+                    components.models.generator
+                )
+            )
+
+            step_metrics.update(
                 get_vocoder_learning_rates(
                     components
                 )
@@ -479,6 +485,8 @@ def run_training(
     torch.autograd.set_detect_anomaly(
         config.training.detect_anomaly
     )
+
+    torch.backends.cudnn.benchmark = True
 
     print("Starting components training.")
     print(f"Run dir: {runtime.paths.run_dir}")
