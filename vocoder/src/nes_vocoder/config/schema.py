@@ -411,6 +411,7 @@ class VocoderGeneratorModelConfig:
 
     eca: ECAConfig = field(default_factory=ECAConfig)
     context: ContextTrunkConfig = field(default_factory=ContextTrunkConfig)
+    freeze_output_bias: bool = False
 
 
 @dataclass
