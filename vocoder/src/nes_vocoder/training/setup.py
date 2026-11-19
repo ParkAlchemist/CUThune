@@ -5,6 +5,7 @@ import torch
 from vocoder.src.nes_vocoder.training.builders import (
     build_training_components,
 )
+from vocoder.src.nes_vocoder.training.checkpointing import unwrap_compiled_module
 from vocoder.src.nes_vocoder.training.context import TrainingRuntime
 from vocoder.src.nes_vocoder.training.data import build_dataloaders, collect_overfit_batches, save_overfit_debug_data
 from vocoder.src.nes_vocoder.training.logging import (
@@ -45,20 +46,16 @@ def build_training_runtime(
     )
 
     write_model_structure(
-        generator=components.models.generator,
-        discriminator=(
-            components.models.discriminator
-        ),
+        generator=unwrap_compiled_module(components.models.generator),
+        discriminator=unwrap_compiled_module(components.models.discriminator),
         output_path=(
                 paths.run_dir / "model_structure.txt"
         ),
     )
 
     manifest = write_model_manifest(
-        generator=components.models.generator,
-        discriminator=(
-            components.models.discriminator
-        ),
+        generator=unwrap_compiled_module(components.models.generator),
+        discriminator=unwrap_compiled_module(components.models.discriminator),
         output_path=(
                 paths.run_dir / "model_structure.json"
         ),
@@ -66,7 +63,7 @@ def build_training_runtime(
 
     torchinfo_text = (
         write_torchinfo_generator_summary(
-            generator=components.models.generator,
+            generator=unwrap_compiled_module(components.models.generator),
             output_path=(
                     paths.run_dir
                     / "torchinfo_generator.txt"

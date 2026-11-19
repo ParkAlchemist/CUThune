@@ -16,6 +16,7 @@ from vocoder.src.nes_vocoder.models.discriminators import (
 from vocoder.src.nes_vocoder.models.generator import (
     CQTUHiFiGANGenerator,
 )
+from vocoder.src.nes_vocoder.training.checkpointing import unwrap_compiled_module
 from vocoder.src.nes_vocoder.training.step import (
     VocoderModels,
     VocoderOptimizers,
@@ -43,6 +44,7 @@ def build_optimizer(
         betas=(config.beta1, config.beta2),
         weight_decay=config.weight_decay,
         eps=config.eps,
+        fused=torch.cuda.is_available(),
     )
 
 
@@ -126,11 +128,25 @@ def build_training_components(
         config.generator,
     ).to(device)
 
-    generator.to(device)
-
     discriminator = HiFiGANMultiDiscriminator(
         config.discriminator,
     ).to(device)
+
+    generator = torch.compile(
+        generator,
+        backend="inductor",
+        mode="default",
+        fullgraph=False,
+        dynamic=False,
+    )
+
+    discriminator = torch.compile(
+        discriminator,
+        backend="inductor",
+        mode="default",
+        fullgraph=False,
+        dynamic=False,
+    )
 
     models = VocoderModels(
         generator=generator,
@@ -184,4 +200,46 @@ def build_training_components(
         loss_bundle=loss_bundle,
         scaler=scaler,
     )
+
+def freeze_generator_output_bias(
+    *,
+    generator: torch.nn.Module,
+    optimizer: torch.optim.Optimizer,
+    value: float = 0.0,
+) -> None:
+    conv_post = getattr(
+        unwrap_compiled_module(generator),
+        "conv_post",
+        None,
+    )
+
+    if conv_post is None:
+        raise AttributeError(
+            "Generator has no conv_post module."
+        )
+
+    bias = getattr(
+        conv_post,
+        "bias",
+        None,
+    )
+
+    if bias is None:
+        raise RuntimeError(
+            "Generator conv_post has no bias."
+        )
+
+    with torch.no_grad():
+        bias.fill_(value)
+
+    bias.requires_grad_(False)
+
+    # Remove stale Adam/AdamW first and second moments.
+    # The parameter remains in the optimizer group to
+    # preserve checkpoint optimizer-group compatibility.
+    optimizer.state.pop(
+        bias,
+        None,
+    )
+
 

@@ -10,6 +10,16 @@ from vocoder.src.nes_vocoder.config.schema import VocoderExperimentConfig
 from vocoder.src.nes_vocoder.training.context import TrainingState, TrainingComponents
 
 
+def unwrap_compiled_module(
+    module: torch.nn.Module,
+) -> torch.nn.Module:
+    return getattr(
+        module,
+        "_orig_mod",
+        module,
+    )
+
+
 def build_checkpoint_payload(
     *,
     state: TrainingState,
@@ -23,10 +33,10 @@ def build_checkpoint_payload(
         "segments_seen": state.segments_seen,
         "audio_samples_seen": state.audio_samples_seen,
         "generator": (
-            components.models.generator.state_dict()
+            unwrap_compiled_module(components.models.generator).state_dict()
         ),
         "discriminator": (
-            components.models.discriminator.state_dict()
+            unwrap_compiled_module(components.models.discriminator).state_dict()
         ),
         "optimizer_g": (
             components.optimizers.generator.state_dict()
@@ -110,11 +120,11 @@ def load_checkpoint(
         map_location=device,
     )
 
-    components.models.generator.load_state_dict(
+    unwrap_compiled_module(components.models.generator).load_state_dict(
         checkpoint["generator"],
         strict=True,
     )
-    components.models.discriminator.load_state_dict(
+    unwrap_compiled_module(components.models.discriminator).load_state_dict(
         checkpoint["discriminator"],
         strict=True,
     )
