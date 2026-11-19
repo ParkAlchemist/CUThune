@@ -41,7 +41,7 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
         default="latest",
         help=(
             "Checkpoint selector. Supported values: "
-            "'latest', 'step:N', 'epoch:N', or an explicit path."
+            "'latest', 'step_N', 'epoch_N', or an explicit path."
         ),
     )
 
@@ -151,7 +151,7 @@ def main() -> None:
     checkpoint_path = resolve_checkpoint_selector(
         checkpoint_dir=checkpoint_dir,
         selector=args.checkpoint,
-        project_root=REPO_ROOT,
+        project_root=VOCODER_ROOT,
     )
 
     epoch, global_step = inspect_checkpoint(checkpoint_path)
