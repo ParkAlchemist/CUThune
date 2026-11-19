@@ -38,6 +38,7 @@ resblock_dilation_sizes = [
 ]
 final_tanh = true
 use_weight_norm = true
+freeze_output_bias = true
 
 [generator.snake_beta]
 alpha_logscale = true
