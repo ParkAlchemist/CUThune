@@ -13,6 +13,7 @@ if repo_root_str not in sys.path:
 
 from vocoder.src.nes_vocoder.config.loader import load_vocoder_config
 from vocoder.src.nes_vocoder.config.validator import validate_vocoder_config
+from vocoder.src.nes_vocoder.training.builders import freeze_generator_output_bias
 from vocoder.src.nes_vocoder.training.checkpointing import load_checkpoint
 from vocoder.src.nes_vocoder.training.engine import run_training
 from vocoder.src.nes_vocoder.training.logging import save_config_snapshot
@@ -72,6 +73,7 @@ def main() -> None:
     )
 
     state = None
+    freeze_done = False
 
     if args.resume is not None:
         resume_path = resolve_project_path(
@@ -87,6 +89,20 @@ def main() -> None:
             device=device,
         )
 
+        if config.generator.freeze_output_bias:
+            freeze_generator_output_bias(
+                generator=runtime.components.models.generator,
+                optimizer=runtime.components.optimizers.generator,
+                value=0.0,
+            )
+
+            freeze_done = True
+
+            print(
+                "Frozen generator conv_post bias at 0.0 "
+                "after checkpoint restoration."
+            )
+
         print(
             "Resumed at "
             f"epoch={state.epoch}, "
@@ -101,6 +117,19 @@ def main() -> None:
         state = TrainingState()
 
     try:
+        if config.generator.freeze_output_bias and not freeze_done:
+            freeze_generator_output_bias(
+                generator=runtime.components.models.generator,
+                optimizer=runtime.components.optimizers.generator,
+                value=0.0,
+            )
+
+            freeze_done = True
+
+            print(
+                "Frozen generator conv_post bias at 0.0"
+            )
+
         run_training(runtime, state)
     finally:
         if runtime.writer is not None:
