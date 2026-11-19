@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
+from typing import overload
 
 import torch
 import torch.nn as nn
@@ -18,6 +20,12 @@ from vocoder.src.nes_vocoder.config.schema import (
 from vocoder.src.nes_vocoder.models.alias_free import (
     AliasFreeActivation1d,
 )
+
+
+@dataclass(frozen=True)
+class GeneratorForwardOutput:
+    audio: torch.Tensor
+    pre_tanh: torch.Tensor
 
 
 def get_padding(kernel_size: int, dilation: int = 1) -> int:
@@ -128,11 +136,14 @@ class SnakeBeta(nn.Module):
                 f"received {x.shape[1]}."
             )
 
+        orig_dtype = x.dtype
+        x = x.float()
+
         alpha, beta = self.effective_parameters()
 
         sin_term = torch.sin(alpha * x)
 
-        return x + sin_term.square() / (beta + self.eps)
+        return (x + sin_term.square() / (beta + self.eps)).to(orig_dtype)
 
 
 def get_activation(
@@ -388,7 +399,12 @@ class CQTUHiFiGANGenerator(nn.Module):
                 if module.bias is not None:
                     nn.init.zeros_(module.bias)
 
-    def forward(self, cqt: torch.Tensor) -> torch.Tensor:
+    def forward(
+            self,
+            cqt: torch.Tensor,
+            *,
+            return_diagnostics: bool = False,
+    ) -> torch.Tensor | GeneratorForwardOutput:
         if cqt.ndim == 4:
             # [B, 1, F, T] -> [B, F, T]
             cqt = cqt[:, 0, :, :]
@@ -423,12 +439,17 @@ class CQTUHiFiGANGenerator(nn.Module):
             x = eca(x)
 
         x = self.activation_post(x)
-        x = self.conv_post(x)
+        pre_tanh = self.conv_post(x).float()
 
-        if self.config.final_tanh:
-            x = torch.tanh(x)
+        audio = torch.tanh(pre_tanh) if self.config.final_tanh else pre_tanh
 
-        return x
+        if return_diagnostics:
+            return GeneratorForwardOutput(
+                audio=audio,
+                pre_tanh=pre_tanh,
+            )
+
+        return audio
 
     def remove_weight_norm(self) -> None:
         remove_weight_norm(self.conv_pre)

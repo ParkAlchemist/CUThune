@@ -75,6 +75,9 @@ class RotaryPositionEmbedding(nn.Module):
         if x.shape[-1] != self.head_dimension:
             raise ValueError(f"RoPE head-dimension mismatch: expected {self.head_dimension}, got {x.shape[-1]}")
 
+        orig_dtype = x.dtype
+        x = x.float()
+
         sequence_length = x.shape[-2]
 
         cosine, sine = self._cosine_and_sine(
@@ -102,7 +105,7 @@ class RotaryPositionEmbedding(nn.Module):
             dim=-1,
         )
 
-        return rotated.flatten(start_dim=-2)
+        return rotated.flatten(start_dim=-2).to(orig_dtype)
 
 
 class RoPETemporalSelfAttention1d(nn.Module):

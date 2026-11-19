@@ -51,6 +51,9 @@ class GlobalResponseNorm1d(nn.Module):
             raise RuntimeError(f"GlobalResponseNorm1d channel mismatch:"
                                f"expected {self.channels}, got {x.shape[-1]}")
 
+        orig_dtype = x.dtype
+        x = x.float()
+
         # Global L2 response over the temporal dimension
         #
         # [B, T, C] -> [B, 1, C]
@@ -71,7 +74,7 @@ class GlobalResponseNorm1d(nn.Module):
 
         normalized_response = global_response / mean_response.clamp_min(self.eps)
 
-        return x + self.gamma * (x * normalized_response) + self.beta
+        return (x + self.gamma * (x * normalized_response) + self.beta).to(orig_dtype)
 
 
 class GlobalResponseNorm2d(nn.Module):
