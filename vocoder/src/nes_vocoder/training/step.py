@@ -10,8 +10,9 @@ from vocoder.src.nes_vocoder.losses.objective import VocoderLossBundle, compute_
     family_balanced_discriminator_loss, discriminator_family_losses
 from vocoder.src.nes_vocoder.training.logging import (
     discriminator_branch_metrics,
-    discriminator_health_metrics,
+    discriminator_health_metrics, waveform_diagnostic_metrics,
 )
+from vocoder.src.nes_vocoder.models.generator import GeneratorForwardOutput
 
 
 @dataclass
@@ -140,7 +141,13 @@ def vocoder_train_micro_step(
             enabled=autocast_enabled,
             dtype=autocast_dtype,
         ):
-            fake_audio_for_g = generator(cqt)
+            generator_output = generator(cqt, return_diagnostics=True)
+
+            if not isinstance(generator_output, GeneratorForwardOutput):
+                raise RuntimeError("Generator diagnostic forward did not return a GeneratorForwardOutput")
+
+            fake_audio_for_g = generator_output.audio
+            pre_tanh_for_g = generator_output.pre_tanh
 
             discriminator_outputs_g = discriminator(
                 real_audio.float(),
@@ -188,37 +195,13 @@ def vocoder_train_micro_step(
     )
 
     losses.update(
-        {
-            "generator_output/rms": float(
-                fake_detached
-                .square()
-                .mean()
-                .sqrt()
-                .cpu()
-            ),
-            "generator_output/peak": float(
-                fake_detached
-                .abs()
-                .max()
-                .cpu()
-            ),
-            "generator_output/mean": float(
-                fake_detached.mean().cpu()
-            ),
-            "generator_output/std": float(
-                fake_detached.std(
-                    unbiased=False
-                ).cpu()
-            ),
-            "generator_output/tanh_saturation_fraction": float(
-                (
-                        fake_detached.abs() >= 0.99
-                )
-                .float()
-                .mean()
-                .cpu()
-            ),
-        }
+        waveform_diagnostic_metrics(
+            pre_tanh=pre_tanh_for_g,
+            prediction=fake_audio_for_g,
+            target=real_audio,
+            silence_window_size=256,
+            silence_rms_threshold=1e-3,
+        )
     )
 
     return VocoderMicroStepResult(losses=losses, batch_size=int(cqt.shape[0]))
@@ -276,6 +259,32 @@ def finish_vocoder_optimizer_step(
             ),
         }
 
+    conv_post = getattr(
+        models.generator,
+        "conv_post",
+        None,
+    )
+
+    conv_post_bias_grad_norm = None
+    conv_post_grad_norm = None
+
+    if conv_post is not None:
+        conv_post_bias_grad_norm = (
+            parameter_gradient_norm(
+                getattr(
+                    conv_post,
+                    "bias",
+                    None,
+                )
+            )
+        )
+
+        conv_post_grad_norm = (
+            module_parameter_gradient_norm(
+                models.generator.conv_post
+            )
+        )
+
     if grad_clip_generator is not None:
         generator_grad_norm_tensor = torch.nn.utils.clip_grad_norm_(
             models.generator.parameters(),
@@ -310,6 +319,8 @@ def finish_vocoder_optimizer_step(
     return {
         "grad_norm_generator": generator_grad_norm,
         "grad_norm_discriminator": discriminator_grad_norm,
+        "grad_norm_generator_conv_post": conv_post_grad_norm,
+        "grad_norm_generator_conv_post_bias": conv_post_bias_grad_norm,
         "optimizer_step_skipped": 0.0,
         "generator_grad_finite": 1.0,
         "discriminator_grad_finite": 1.0,
@@ -372,4 +383,52 @@ def vocoder_train_step(
         losses=losses,
         batch_size=micro_result.batch_size,
     )
+
+def parameter_gradient_norm(
+    parameter: torch.Tensor | None,
+) -> float | None:
+    if parameter is None:
+        return None
+
+    if parameter.grad is None:
+        return None
+
+    gradient = (
+        parameter.grad
+        .detach()
+        .float()
+    )
+
+    return float(
+        gradient.norm().cpu()
+    )
+
+
+def module_parameter_gradient_norm(
+    module: nn.Module,
+) -> float | None:
+    squared_norm = 0.0
+    found = False
+
+    for parameter in module.parameters():
+        if parameter.grad is None:
+            continue
+
+        gradient = (
+            parameter.grad
+            .detach()
+            .float()
+        )
+
+        squared_norm += float(
+            gradient.square().sum().cpu()
+        )
+
+        found = True
+
+    if not found:
+        return None
+
+    return squared_norm ** 0.5
+
 
