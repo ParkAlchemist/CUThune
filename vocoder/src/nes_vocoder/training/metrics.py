@@ -7,6 +7,8 @@ AVERAGED_METRIC_PREFIXES = (
     "loss_",
     "discriminator_health/",
     "generator_output/",
+    "tanh/",
+    "silence/",
     "grad_",
     "performance/",
 )
@@ -15,6 +17,7 @@ LATEST_METRIC_PREFIXES = (
     "context/",
     "scheduler/",
     "amp/",
+    "generator_output_layer/",
 )
 CRITICAL_MAXIMUM_METRICS = (
     "loss_g_total",
@@ -23,6 +26,13 @@ CRITICAL_MAXIMUM_METRICS = (
     "grad_norm_generator",
     "grad_norm_discriminator",
     "generator_output/peak",
+    "generator_output/rms_ratio",
+    "tanh/pre_abs_p99",
+    "tanh/pre_abs_max",
+    "tanh/output_ge_099",
+    "tanh/negative_le_m099",
+    "silence/output_negative_rail",
+    "silence/output_rms",
 )
 
 
