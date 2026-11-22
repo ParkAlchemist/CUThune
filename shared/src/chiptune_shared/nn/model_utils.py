@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from torch.nn.utils import spectral_norm as apply_spectral_norm
 
 
-NormType = Literal["none", "batch", "instance", "group"]
+NormType = Literal["none", "batch", "instance", "group", "layer"]
 ActivationType = Literal["none", "relu", "leaky_relu", "gelu", "silu", "tanh"]
 PaddingMode = Literal["reflect", "replicate", "zeros", "cqt"]
 InitType = Literal["normal", "xavier", "kaiming", "orthogonal"]
@@ -34,21 +34,70 @@ def get_activation(
         raise ValueError(f"Unknown activation function: {name}")
 
 
+class LayerNorm2d(nn.Module):
+    """
+    Channel-wise LayerNorm for [B, C, H, W] tensors.
+
+    Each spatial position is normalized independently across channels.
+    """
+    def __init__(
+            self,
+            channels: int,
+            *,
+            eps: float = 1e-6,
+            elementwise_affine: bool = True,
+    ) -> None:
+        super().__init__()
+
+        if channels <= 0:
+            raise ValueError(f"Expected channels to be positive, got {channels}")
+
+        if eps <= 0.0:
+            raise ValueError(f"Expected eps to be positive, got {eps}")
+
+        self.channels = channels
+        self.eps = eps
+
+        self.norm = nn.LayerNorm(
+            normalized_shape=channels,
+            eps=eps,
+            elementwise_affine=elementwise_affine,
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.ndim != 4:
+            raise RuntimeError(
+                f"LayerNorm2d expects 4D tensor, got {tuple(x.shape)}"
+            )
+
+        if x.shape[1] != self.channels:
+            raise RuntimeError(
+                f"LayerNorm2d channel mismatch: expected {self.channels}, got {x.shape[1]}"
+            )
+
+        x = x.permute(0, 2, 3, 1)
+        x = self.norm(x)
+        x = x.permute(0, 3, 1, 2)
+        return x
+
+
 def get_norm_layer(
         channels: int,
         norm: NormType = "instance",
         num_groups: int = 32,
         affine: bool = True,
+        eps: float = 1e-5,
 ) -> nn.Module:
     if norm == "none":
         return nn.Identity()
-    if norm == "batch":
-        return nn.BatchNorm2d(channels, affine=affine)
-    if norm == "instance":
+    elif norm == "batch":
+        return nn.BatchNorm2d(channels, affine=affine, eps=eps)
+    elif norm == "instance":
         return nn.InstanceNorm2d(channels,
                                  affine=affine,
-                                 track_running_stats=False)
-    if norm == "group":
+                                 track_running_stats=False,
+                                 eps=eps)
+    elif norm == "group":
         groups = min(num_groups, channels)
 
         while channels % groups != 0 and groups > 1:
@@ -56,9 +105,19 @@ def get_norm_layer(
 
         return nn.GroupNorm(num_groups=groups,
                             num_channels=channels,
-                            affine=affine)
+                            affine=affine,
+                            eps=eps
+                            )
 
-    raise ValueError(f"Unknown norm function: {norm}")
+    elif norm == "layer":
+        return LayerNorm2d(
+            channels=channels,
+            elementwise_affine=affine,
+            eps=eps,
+        )
+
+    else:
+        raise ValueError(f"Unknown norm function: {norm}")
 
 
 class CQTBufferPad(nn.Module):
@@ -71,6 +130,19 @@ class CQTBufferPad(nn.Module):
             freq_pad_value: float = 0.0,
     ) -> None:
         super().__init__()
+
+        padding_values = {
+            "pad_time_left": pad_time_left,
+            "pad_time_right": pad_time_right,
+            "pad_freq_low": pad_freq_low,
+            "pad_freq_high": pad_freq_high,
+        }
+
+        for name, value in padding_values.items():
+            if value < 0:
+                raise ValueError(
+                    f"{name} must be non-negative, got {value}"
+                )
 
         self.time_pad = (pad_time_left, pad_time_right, 0, 0)
         self.freq_pad = (0, 0, pad_freq_low, pad_freq_high)
@@ -93,20 +165,21 @@ def get_padding_layer(
     if padding_mode == "reflect":
         return nn.ReflectionPad2d(padding)
 
-    if padding_mode == "replicate":
+    elif padding_mode == "replicate":
         return nn.ReplicationPad2d(padding)
 
-    if padding_mode == "zeros":
+    elif padding_mode == "zeros":
         return nn.ZeroPad2d(padding)
 
-    if padding_mode == "cqt":
+    elif padding_mode == "cqt":
         if isinstance(padding, tuple):
             left, right, freq_low, freq_high = padding
             return CQTBufferPad(left, right, freq_low, freq_high, freq_pad_value)
         if isinstance(padding, int):
             return CQTBufferPad(padding, padding, padding, padding, freq_pad_value)
 
-    raise ValueError(f"Unknown padding mode: {padding_mode}")
+    else:
+        raise ValueError(f"Unknown padding mode: {padding_mode}")
 
 
 def maybe_spectral_norm(
