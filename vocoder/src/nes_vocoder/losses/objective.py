@@ -51,9 +51,6 @@ class VocoderLossBundle(nn.Module):
 
         self.config = config
         self.mrstft_loss = MultiResolutionSTFTLoss(config.mrstft)
-        self.temporal_gradient_loss: (
-                nn.Module | None
-        )
 
         if not config.temporal_gradient.enabled:
             self.temporal_gradient_loss = None
