@@ -56,7 +56,7 @@ class PixelUnshuffle(nn.Module):
 
 class DownsampleBlock(nn.Module):
     """
-    Spatial downsampling with either pixelunshuffle or strided mode.
+    Spatial downsampling with either pixel unshuffle or strided mode.
 
     For 2D data:
     [B, C, H, W] -> [B, 2C, H/2, W/2]
@@ -68,6 +68,7 @@ class DownsampleBlock(nn.Module):
             *,
             mode: Literal["pixel_unshuffle", "strided"] = "pixel_unshuffle",
             norm: NormType = "group",
+            norm_eps: float = 1e-5,
             activation: ActivationType = "gelu",
             padding_mode: PaddingMode = "cqt",
             padding_val: float = 0.0,
@@ -112,6 +113,7 @@ class DownsampleBlock(nn.Module):
                 spectral_norm=spectral_norm,
                 activation=activation,
                 norm=norm,
+                norm_eps=norm_eps,
                 num_groups=num_groups,
             )
         elif mode == "strided":
@@ -129,6 +131,7 @@ class DownsampleBlock(nn.Module):
                 padding_mode=padding_mode,
                 padding_value=padding_val,
                 norm=norm,
+                norm_eps=norm_eps,
                 activation=activation,
                 spectral_norm=spectral_norm,
                 num_groups=num_groups,

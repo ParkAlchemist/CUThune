@@ -35,6 +35,7 @@ class ConvNormAct(nn.Module):
         bias: bool | None = None,
         spectral_norm: bool = False,
         norm_affine: bool = True,
+        norm_eps: float = 1e-5,
         num_groups: int = 32,
         negative_slope: float = 0.2,
     ) -> None:
@@ -64,6 +65,7 @@ class ConvNormAct(nn.Module):
             norm = norm,
             num_groups = num_groups,
             affine = norm_affine,
+            eps = norm_eps,
         )
 
         self.activation = get_activation(
