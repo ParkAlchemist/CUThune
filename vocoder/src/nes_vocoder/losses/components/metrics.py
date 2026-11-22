@@ -175,8 +175,8 @@ def generator_loss_metrics(
             resolution.reference_norm_mean.detach().cpu()
         )
 
-        metrics[f"{prefix}/activity_mean"] = float(
-            resolution.activity_mean.detach().cpu()
+        metrics[f"{prefix}/relative_regime_weight"] = float(
+            resolution.relative_regime_weight.detach().cpu()
         )
 
         metrics[f"{prefix}/floor_activation_fraction"] = float(

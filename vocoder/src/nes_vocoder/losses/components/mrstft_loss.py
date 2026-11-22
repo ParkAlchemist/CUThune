@@ -20,7 +20,7 @@ class STFTResolutionLossOutput:
     log_magnitude: torch.Tensor
 
     reference_norm_mean: torch.Tensor
-    activity_mean: torch.Tensor
+    relative_regime_weight: torch.Tensor
     floor_activation_fraction: torch.Tensor
 
     spectral_convergence_weight: float
@@ -128,7 +128,12 @@ class SingleResolutionSTFTLoss(nn.Module):
             real_magnitude: torch.Tensor,
             *,
             reference_floor: float,
-    ) -> tuple[torch.Tensor, ...]:
+    ) -> tuple[
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+    ]:
         if fake_magnitude.shape != real_magnitude.shape:
             raise ValueError(
                 "Fake and real magnitudes must have the same shape, "
@@ -158,27 +163,35 @@ class SingleResolutionSTFTLoss(nn.Module):
             dim=(-2, -1),
         )
 
-        relative_error = (
+        denominator = torch.sqrt(
+            reference_norm.square()
+            + reference_floor ** 2
+        )
+
+        per_example_loss = (
                 difference_norm
-                / reference_norm.clamp_min(
-            reference_floor
-        )
+                / denominator
         )
 
-        activity_weight = (
+        loss = per_example_loss.mean()
+
+        # Diagnostics only. This value no longer scales the loss.
+        relative_regime_weight = (
                 reference_norm.detach()
-                / reference_floor
-        ).clamp(
-            min=0.0,
-            max=1.0,
+                / denominator.detach()
         )
 
-        loss = (relative_error * activity_weight).mean()
-        reference_norm_mean = reference_norm.detach().mean()
-        activity_mean = activity_weight.detach().mean()
-        floor_activation_fraction = (reference_norm < reference_floor).float().detach().mean()
+        floor_activation_fraction = (
+                reference_norm.detach()
+                < reference_floor
+        ).float().mean()
 
-        return loss, reference_norm_mean, activity_mean, floor_activation_fraction
+        return (
+            loss,
+            reference_norm.detach().mean(),
+            relative_regime_weight.mean(),
+            floor_activation_fraction,
+        )
 
     def forward(
             self,
@@ -188,14 +201,14 @@ class SingleResolutionSTFTLoss(nn.Module):
         fake_mag = self._stft_magnitude(fake_audio)
         real_mag = self._stft_magnitude(real_audio)
 
-        spectral_convergence, reference_norm_mean, activity_mean, floor_activation_fraction = self._stft_spectral_convergence(fake_mag, real_mag, reference_floor=self.reference_floor)
+        spectral_convergence, reference_norm_mean, relative_regime_weight, floor_activation_fraction = self._stft_spectral_convergence(fake_mag, real_mag, reference_floor=self.reference_floor)
 
         log_magnitude = F.l1_loss(
             torch.log(fake_mag.clamp_min(self.eps)),
             torch.log(real_mag.clamp_min(self.eps)),
         )
 
-        return spectral_convergence, log_magnitude, reference_norm_mean, activity_mean, floor_activation_fraction
+        return spectral_convergence, log_magnitude, reference_norm_mean, relative_regime_weight, floor_activation_fraction
 
 
 class MultiResolutionSTFTLoss(nn.Module):
@@ -256,7 +269,7 @@ class MultiResolutionSTFTLoss(nn.Module):
             self.config.win_lengths,
             self.losses
         ):
-            spectral_convergence, log_magnitude, reference_norm_mean, activity_mean, floor_activation_fraction = loss_func(fake_audio, real_audio)
+            spectral_convergence, log_magnitude, reference_norm_mean, relative_regime_weight, floor_activation_fraction = loss_func(fake_audio, real_audio)
 
             resolution_outputs.append(
                 STFTResolutionLossOutput(
@@ -268,7 +281,7 @@ class MultiResolutionSTFTLoss(nn.Module):
                     spectral_convergence_weight=self.config.spectral_convergence_weight,
                     log_magnitude_weight=self.config.log_magnitude_weight,
                     reference_norm_mean=reference_norm_mean,
-                    activity_mean=activity_mean,
+                    relative_regime_weight=relative_regime_weight,
                     floor_activation_fraction=floor_activation_fraction,
                 )
             )
