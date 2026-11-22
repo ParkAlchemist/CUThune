@@ -150,13 +150,13 @@ lambda_band_power = 0.065
 lambda_spectral_flatness = 0.09
 lambda_dc_offset = 0.08
 lambda_cqt = 0.15
-lambda_rail_occupancy = 0.2
+lambda_rail_occupancy = 0.0
 
 [loss.mrstft]
 fft_sizes = [128, 256, 512, 1024, 2048]
 hop_sizes = [32, 64, 128, 256, 512]
 win_lengths = [128, 256, 512, 1024, 2048]
-spectral_convergence_weight = 1.0
+spectral_convergence_weight = 0.0
 log_magnitude_weight = 1.0
 eps = 1e-5
 reference_floor = 1.0
