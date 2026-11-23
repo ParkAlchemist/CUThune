@@ -388,6 +388,15 @@ class ContextTrunkConfig:
     grn_eps: float = 1e-6
 
 
+@dataclass(frozen=True)
+class RMSEmbeddingConfig:
+    enabled: bool = True
+    hidden_channels: int = 64
+    kernel_size: int = 7
+    layer_scale_initial: float = 1e-3
+    remap_to_activity: bool = True
+
+
 @dataclass
 class VocoderGeneratorModelConfig:
     activation: ActivationType = "snake_beta"
@@ -411,6 +420,7 @@ class VocoderGeneratorModelConfig:
 
     eca: ECAConfig = field(default_factory=ECAConfig)
     context: ContextTrunkConfig = field(default_factory=ContextTrunkConfig)
+    rms_embedding: RMSEmbeddingConfig = field(default_factory=RMSEmbeddingConfig)
     freeze_output_bias: bool = False
 
 

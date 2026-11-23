@@ -154,19 +154,64 @@ def complex_cqt_to_normalized_mag(
     db_min: float,
     db_max: float,
 ) -> tuple[np.ndarray, float]:
-    mag = np.abs(cqt_complex)
+    if not math.isfinite(db_min):
+        raise ValueError(
+            f"db_min must be finite, got {db_min}."
+        )
 
-    ref_mag = float(np.max(mag))
-    if ref_mag < 1e-8:
-        ref_mag = 1.0
+    if not math.isfinite(db_max):
+        raise ValueError(
+            f"db_max must be finite, got {db_max}."
+        )
 
-    db = librosa.amplitude_to_db(mag, ref=ref_mag)
-    db = np.clip(db, db_min, db_max)
+    if db_min >= db_max:
+        raise ValueError(
+            "Expected db_min < db_max, got "
+            f"{db_min} and {db_max}."
+        )
 
-    norm = 2.0 * ((db - db_min) / (db_max - db_min)) - 1.0
-    norm = np.clip(norm, -1.0, 1.0).astype(np.float32)
+    magnitude = np.abs(
+        cqt_complex
+    ).astype(
+        np.float32,
+        copy=False,
+    )
 
-    return norm, ref_mag
+    reference_magnitude = float(
+        magnitude.max(
+            initial=0.0,
+        )
+    )
+
+    if reference_magnitude < 1e-8:
+        reference_magnitude = 1.0
+
+    db = librosa.amplitude_to_db(
+        magnitude,
+        ref=reference_magnitude,
+        top_db=None,
+    )
+
+    db = np.clip(
+        db,
+        db_min,
+        db_max,
+    )
+
+    normalized = (2.0 * ((db - db_min) / (db_max - db_min)) - 1.0)
+
+    normalized = np.clip(
+        normalized,
+        -1.0,
+        1.0,
+    ).astype(
+        np.float32,
+    )
+
+    return (
+        normalized,
+        reference_magnitude,
+    )
 
 
 def normalized_mag_to_amplitude(

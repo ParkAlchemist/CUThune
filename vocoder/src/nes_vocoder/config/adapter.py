@@ -28,6 +28,12 @@ def build_generator_config(
         activation=source.activation,
         final_tanh=source.final_tanh,
         use_weight_norm=source.use_weight_norm,
+        snake_beta=source.snake_beta,
+        alias_free=source.alias_free,
+        eca=source.eca,
+        context=source.context,
+        rms_embedding=source.rms_embedding,
+        freeze_output_bias=source.freeze_output_bias,
     )
 
 

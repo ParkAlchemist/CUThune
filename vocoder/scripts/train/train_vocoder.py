@@ -4,6 +4,8 @@ import argparse
 from pathlib import Path
 import sys
 
+import torch
+
 REPO_ROOT = Path(__file__).resolve().parents[3]
 VOCODER_ROOT = REPO_ROOT/"vocoder"
 
@@ -47,6 +49,10 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+
+    torch.backends.cudnn.benchmark = True
+    torch.set_float32_matmul_precision("high")
+    torch.backends.cudnn.allow_tf32 = True
 
     config_path = resolve_project_path(
         args.config,

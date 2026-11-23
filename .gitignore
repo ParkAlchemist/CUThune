@@ -184,6 +184,7 @@ wandb/
 
 # Analysis results
 analysis/
+cache_audit/
 
 # Experiment branches
 scripts/branches

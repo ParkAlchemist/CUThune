@@ -486,8 +486,6 @@ def run_training(
         config.training.detect_anomaly
     )
 
-    torch.backends.cudnn.benchmark = True
-
     print("Starting components training.")
     print(f"Run dir: {runtime.paths.run_dir}")
     print(f"Device: {runtime.device}")

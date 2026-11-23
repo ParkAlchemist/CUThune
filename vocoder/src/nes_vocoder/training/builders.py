@@ -105,16 +105,16 @@ def build_scheduler(
             gamma=config.gamma,
         )
 
-    if config.name == "cosine":
+    elif config.name == "cosine":
         return build_fixed_floor_cosine_scheduler(
             optimizer,
             t_max=config.t_max,
             eta_min=config.eta_min,
         )
-
-    raise ValueError(
-        f"Unsupported scheduler: {config.name!r}"
-    )
+    else:
+        raise ValueError(
+            f"Unsupported scheduler: {config.name!r}"
+        )
 
 
 def build_training_components(

@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import overload
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn.utils import remove_weight_norm
 from torch.nn.utils.parametrizations import weight_norm
+from torch.nn.utils.parametrize import (
+    is_parametrized,
+    remove_parametrizations,
+)
 
 from shared.src.chiptune_shared.nn.blocks.channel_attention import ECABlock1d
 from shared.src.chiptune_shared.nn.blocks.convnext import ConvNeXtContextTrunk1d
@@ -23,9 +25,25 @@ from vocoder.src.nes_vocoder.models.alias_free import (
 
 
 @dataclass(frozen=True)
+class RMSEnvelopeEmbeddingOutput:
+    activity_mean: torch.Tensor
+    silence_fraction: torch.Tensor
+
+    embedding_mean: torch.Tensor
+    embedding_rms: torch.Tensor
+    embedding_max_abs: torch.Tensor
+
+    to_cqt_ratio: torch.Tensor
+
+    layer_scale_mean_abs: torch.Tensor
+    layer_scale_max_abs: torch.Tensor
+
+
+@dataclass(frozen=True)
 class GeneratorForwardOutput:
     audio: torch.Tensor
     pre_tanh: torch.Tensor
+    rms_embedding: RMSEnvelopeEmbeddingOutput | None = None
 
 
 def get_padding(kernel_size: int, dilation: int = 1) -> int:
@@ -155,7 +173,7 @@ def get_activation(
     if activation == "leaky_relu":
         return nn.LeakyReLU(0.1)
 
-    if activation == "snake_beta":
+    elif activation == "snake_beta":
 
         module = SnakeBeta(
             channels=channels,
@@ -174,7 +192,17 @@ def get_activation(
             )
         return module
 
-    raise ValueError(f"Unknown activation: {activation}")
+    else:
+        raise ValueError(f"Unknown activation: {activation}")
+
+
+def remove_parametrized_weight_norm(module: nn.Module,) -> None:
+    if is_parametrized(module,"weight"):
+        remove_parametrizations(
+            module,
+            "weight",
+            leave_parametrized=True,
+        )
 
 
 class ResBlock1D(nn.Module):
@@ -246,10 +274,116 @@ class ResBlock1D(nn.Module):
 
     def remove_weight_norm(self) -> None:
         for conv in self.convs1:
-            remove_weight_norm(conv)
+            remove_parametrized_weight_norm(conv)
 
         for conv in self.convs2:
-            remove_weight_norm(conv)
+            remove_parametrized_weight_norm(conv)
+
+
+class RMSEnvelopeEmbedding(nn.Module):
+    def __init__(
+        self,
+        *,
+        output_channels: int,
+        hidden_channels: int = 64,
+        kernel_size: int = 7,
+        layer_scale_initial: float = 1e-3,
+        remap_to_activity: bool = True,
+    ) -> None:
+        super().__init__()
+
+        if output_channels <= 0:
+            raise ValueError(
+                "output_channels must be positive."
+            )
+
+        if hidden_channels <= 0:
+            raise ValueError(
+                "hidden_channels must be positive."
+            )
+
+        if kernel_size <= 0 or kernel_size % 2 == 0:
+            raise ValueError(
+                "kernel_size must be positive "
+                "and odd."
+            )
+
+        if layer_scale_initial < 0.0:
+            raise ValueError(
+                "layer_scale_initial must be "
+                "non-negative."
+            )
+
+        self.output_channels = output_channels
+
+        self.remap_to_activity = remap_to_activity
+
+        self.input_projection = nn.Conv1d(
+            in_channels=1,
+            out_channels=hidden_channels,
+            kernel_size=kernel_size,
+            padding=kernel_size // 2,
+            bias=False,
+        )
+
+        self.activation = nn.SiLU()
+
+        self.output_projection = nn.Conv1d(
+            in_channels=hidden_channels,
+            out_channels=output_channels,
+            kernel_size=1,
+            bias=False,
+        )
+
+        self.layer_scale = nn.Parameter(
+            torch.full(
+                (output_channels,),
+                fill_value=layer_scale_initial,
+                dtype=torch.float32,
+            )
+        )
+
+        self.reset_parameters()
+
+    def zero_biases(self) -> None:
+        nn.init.zeros_(self.input_projection.bias)
+        nn.init.zeros_(self.output_projection.bias)
+
+    def reset_parameters(self) -> None:
+        nn.init.normal_(
+            self.input_projection.weight,
+            mean=0.0,
+            std=0.01,
+        )
+
+        nn.init.normal_(
+            self.output_projection.weight,
+            mean=0.0,
+            std=0.01,
+        )
+
+    def forward(
+        self,
+        envelope: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        if envelope.ndim != 3 or envelope.shape[1] != 1:
+            raise ValueError(
+                "Expected RMS envelope [B,1,T], "
+                f"got {tuple(envelope.shape)}."
+            )
+
+        if self.remap_to_activity:
+            activity = (envelope + 1.0) * 0.5
+            activity = activity.clamp(min=0.0, max=1.0)
+        else:
+            activity = envelope
+
+        embedding = self.input_projection(activity)
+        embedding = self.activation(embedding)
+        embedding = self.output_projection(embedding)
+        embedding = embedding * self.layer_scale[None, :, None]
+
+        return embedding, activity
 
 
 class CQTUHiFiGANGenerator(nn.Module):
@@ -267,7 +401,7 @@ class CQTUHiFiGANGenerator(nn.Module):
     def __init__(
             self,
             cqt_bins: int,
-            model_config: VocoderGeneratorModelConfig = VocoderGeneratorModelConfig(),
+            model_config: VocoderGeneratorModelConfig,
     ) -> None:
         super().__init__()
         self.config = model_config
@@ -289,6 +423,14 @@ class CQTUHiFiGANGenerator(nn.Module):
                 padding=0,
             )
         )
+
+        self.rms_embedding = RMSEnvelopeEmbedding(
+            output_channels=model_config.upsample_initial_channel,
+            hidden_channels=model_config.rms_embedding.hidden_channels,
+            kernel_size=model_config.rms_embedding.kernel_size,
+            layer_scale_initial=model_config.rms_embedding.layer_scale_initial,
+            remap_to_activity=model_config.rms_embedding.remap_to_activity,
+        ) if model_config.rms_embedding.enabled else None
 
         context_config = model_config.context
 
@@ -402,6 +544,7 @@ class CQTUHiFiGANGenerator(nn.Module):
     def forward(
             self,
             cqt: torch.Tensor,
+            rms_envelope: torch.Tensor,
             *,
             return_diagnostics: bool = False,
     ) -> torch.Tensor | GeneratorForwardOutput:
@@ -414,9 +557,51 @@ class CQTUHiFiGANGenerator(nn.Module):
                 f"Expected CQT shape [B,F,T] or [B,1,F,T], got {tuple(cqt.shape)}"
             )
 
-        cqt = F.pad(cqt, (3, 3), mode="constant", value=-1.0)
+        if rms_envelope.ndim != 3 or rms_envelope.shape[1] != 1:
+            raise ValueError(
+                f"Expected RMS envelope [B, 1, T] "
+                f"got {tuple(rms_envelope.shape)} instead"
+            )
 
-        x = self.conv_pre(cqt)
+        if cqt.shape[0] != rms_envelope.shape[0]:
+            raise ValueError(
+                f"CQT and RMS batch sizes differ: "
+                f"{cqt.shape[0]} != {rms_envelope.shape[0]}"
+            )
+
+        if cqt.shape[-1] != rms_envelope.shape[-1]:
+            raise ValueError(
+                f"CQT and RMS frame counts differ: "
+                f"{cqt.shape[-1]} != {rms_envelope.shape[-1]}"
+            )
+
+        cqt = F.pad(cqt, (3, 3), mode="constant", value=-1.0)
+        cqt_features = self.conv_pre(cqt)
+
+        rms_diagnostics = None
+
+        if self.rms_embedding is not None:
+            rms_features, rms_activity = self.rms_embedding(rms_envelope)
+
+            if cqt_features.shape != rms_features.shape:
+                raise RuntimeError(
+                    "CQT and RMS embeddings have "
+                    "different shapes: "
+                    f"{tuple(cqt_features.shape)} "
+                    f"versus "
+                    f"{tuple(rms_features.shape)}."
+                )
+
+            x = cqt_features + rms_features
+
+            if return_diagnostics:
+                rms_diagnostics = self._rms_diagnostics(
+                    activity=rms_activity,
+                    rms_features=rms_features,
+                    cqt_features=cqt_features,
+                )
+        else:
+            x = cqt_features
 
         x = self.context_trunk(x)
 
@@ -447,18 +632,48 @@ class CQTUHiFiGANGenerator(nn.Module):
             return GeneratorForwardOutput(
                 audio=audio,
                 pre_tanh=pre_tanh,
+                rms_embedding=rms_diagnostics,
             )
 
         return audio
 
+    def _rms_diagnostics(
+            self,
+            *,
+            activity: torch.Tensor,
+            rms_features: torch.Tensor,
+            cqt_features: torch.Tensor,
+    ) -> RMSEnvelopeEmbeddingOutput:
+        if self.rms_embedding is None:
+            raise RuntimeError(
+                "RMS diagnostics requested while "
+                "RMS conditioning is disabled."
+            )
+
+        activity_detached = activity.detach().float()
+        rms_detached = rms_features.detach().float()
+        cqt_detached = cqt_features.detach().float()
+
+        layer_scale = self.rms_embedding.layer_scale.detach().float()
+
+        return RMSEnvelopeEmbeddingOutput(
+            activity_mean=activity_detached.mean(),
+            silence_fraction=(activity_detached <= 0.369).float().mean(),
+            embedding_mean=rms_detached.mean(),
+            embedding_rms=torch.sqrt(rms_detached.square().mean() + 1e-8),
+            embedding_max_abs=rms_detached.abs().amax(),
+            to_cqt_ratio=rms_detached.norm() / cqt_detached.norm().clamp_min(1e-8),
+            layer_scale_mean_abs=layer_scale.abs().mean(),
+            layer_scale_max_abs=layer_scale.abs().amax(),
+        )
+
     def remove_weight_norm(self) -> None:
-        remove_weight_norm(self.conv_pre)
+        remove_parametrized_weight_norm(self.conv_pre)
 
         for up in self.ups:
-            remove_weight_norm(up)
+            remove_parametrized_weight_norm(up)
 
-        for rb in self.resblocks:
-            rb.remove_weight_norm()
+        for block in self.resblocks:
+            block.remove_weight_norm()
 
-        remove_weight_norm(self.conv_post)
-
+        remove_parametrized_weight_norm(self.conv_post)
