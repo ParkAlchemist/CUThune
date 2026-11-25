@@ -417,6 +417,8 @@ class ContextAttentionConfig:
     dropout: float = 0.0
 
     rope_base: float = 10_000.0
+    partial_rotary_factor:float = 1.0
+    window_size: int | None = None
 
     layer_scale_initial: float = 1e-4
 

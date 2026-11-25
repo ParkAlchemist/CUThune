@@ -584,6 +584,8 @@ class ConvNeXtContextTrunk1d(nn.Module):
                 number_of_heads=attn_config.number_of_heads,
                 dropout=attn_config.dropout,
                 rope_base=attn_config.rope_base,
+                partial_rotary_factor=attn_config.partial_rotary_factor,
+                window_size=attn_config.window_size,
                 layer_scale_initial=attn_config.layer_scale_initial,
                 qkv_bias=attn_config.qkv_bias,
                 output_bias=attn_config.output_bias,

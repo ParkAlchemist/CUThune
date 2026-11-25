@@ -93,7 +93,8 @@ placement = 3
 number_of_heads = 8
 dropout = 0.0
 rope_base = 10000.0
-layer_scale_initial = 1e-6
+partial_rotary_factor = 1.0
+layer_scale_initial = 1e-4
 qkv_bias = true
 output_bias = true
 
