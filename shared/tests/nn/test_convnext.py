@@ -433,7 +433,14 @@ def test_generator_with_multi_kernel_context_1d(small_generator_config) -> None:
         requires_grad=True,
     )
 
-    waveform = generator(cqt)
+    rms = torch.randn(
+        1,
+        1,
+        8,
+        requires_grad=True,
+    )
+
+    waveform = generator(cqt, rms)
 
     expected_length = (
         8 * generator.total_upsample_factor
@@ -490,7 +497,15 @@ def test_multi_kernel_context_1d_generator_runs_on_cuda(small_generator_config) 
         requires_grad=True,
     )
 
-    waveform = generator(cqt)
+    rms = torch.randn(
+        1,
+        1,
+        8,
+        device=device,
+        requires_grad=True,
+    )
+
+    waveform = generator(cqt, rms)
     waveform.mean().backward()
 
     assert waveform.device.type == device.type

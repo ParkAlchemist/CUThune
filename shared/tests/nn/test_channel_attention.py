@@ -161,10 +161,11 @@ def test_vocoder_uses_eca_after_mrf():
 
     assert eca_count == len(config.upsample_rates)
 
-    x = torch.randn(1, 116, 8)
-    y = model(x)
+    cqt = torch.randn(1, 116, 8)
+    rms = torch.randn(1, 1, 8)
+    y = model(cqt, rms)
 
-    assert y.shape == (1, 1, 8 * 512)
+    assert y.shape == (1, 1, 8 * 256)
     assert torch.isfinite(y).all()
 
 
