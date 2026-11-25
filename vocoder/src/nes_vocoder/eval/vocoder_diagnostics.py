@@ -7,7 +7,7 @@ import torch
 from matplotlib import pyplot as plt
 
 from shared.src.chiptune_shared.cqt.cache import discover_cache_records
-from vocoder.src.nes_vocoder.data.dataset import load_processed_waveform, pad_1d
+from vocoder.src.nes_vocoder.data.dataset import load_processed_waveform
 
 
 def normalize_path_string(path: str | Path) -> str:

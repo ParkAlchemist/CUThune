@@ -146,3 +146,10 @@ def test_validator_reports_multiple_errors():
     assert "optimizer.generator.lr" in message
 
 
+def test_validation_fraction_must_be_strict() -> None:
+    config = make_valid_config()
+    config.data.validation_fraction = 1.0
+    with pytest.raises(ConfigValidationError, match="validation_fraction"):
+        validate_vocoder_config(config)
+
+

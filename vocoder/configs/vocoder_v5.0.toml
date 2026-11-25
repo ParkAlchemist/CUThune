@@ -13,17 +13,31 @@ hop_length = 256
 cqt_bins = 116
 bins_per_octave = 12
 fmin = 27.5
-
 segment_frames = 128
-windows_per_track = 8
+
+train_windows_per_track = 8
+validation_windows_per_track = 5
+validation_fraction = 0.10
+split_seed = 1337
+
 batch_size = 8
+validation_batch_size = 8
 num_workers = 4
-cache_waveforms = 16
-pin_memory = true
 persistent_workers = true
 prefetch_factor = 2
-random_window = true
-drop_last = true
+pin_memory = true
+cache_waveforms = 4
+cache_candidates = 256
+
+[data.sampling]
+random_probability = 0.60
+active_to_silent_probability = 0.15
+silent_to_active_probability = 0.15
+silence_rich_probability = 0.10
+silence_rms_threshold = 0.003
+silence_rich_fraction = 0.40
+boundary_jitter_frames = 16
+minimum_state_frames = 4
 
 [generator]
 activation = "snake_beta"
@@ -38,7 +52,6 @@ resblock_dilation_sizes = [
 ]
 final_tanh = true
 use_weight_norm = true
-freeze_output_bias = false
 
 [generator.snake_beta]
 alpha_logscale = true
@@ -64,8 +77,8 @@ residual = false
 [generator.context]
 enabled = true
 number_of_blocks = 6
-block_type = "multi_kernel_convnext"
-kernel_size = 7
+block_type = "convnext"
+kernel_size = 15
 dilation = 1
 multi_kernel_sizes = [3, 7, 15, 31]
 multi_kernel_dilations = [1, 1, 1, 1]
@@ -294,7 +307,7 @@ fail_on_nonfinite = true
 [amp]
 enabled = false
 start_step = 0
-dtype = "float16"
+dtype = "bfloat16"
 initial_scale = 256.0
 growth_interval = 2000
 
@@ -319,4 +332,9 @@ tensorboard = true
 enabled = true
 poll_every_steps = 10
 save_on_interrupt = true
+
+[validation]
+enabled = true
+every_steps = 5000
+max_batches = 100
 

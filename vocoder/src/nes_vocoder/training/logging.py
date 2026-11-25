@@ -19,6 +19,8 @@ from shared.src.chiptune_shared.nn.blocks.temporal_attention import RoPETemporal
 from vocoder.src.nes_vocoder.config.schema import VocoderExperimentConfig
 from typing import TYPE_CHECKING
 
+from vocoder.src.nes_vocoder.models.generator import RMSEnvelopeEmbeddingOutput
+
 if TYPE_CHECKING:
     from vocoder.src.nes_vocoder.training.context import (
         RunPaths,
@@ -479,11 +481,7 @@ def write_torchinfo_generator_summary(
     try:
         result = summary(
             generator,
-            input_size=(
-                1,
-                cqt_bins,
-                segment_frames,
-            ),
+            input_size=[(1, cqt_bins, segment_frames), (1, 1, segment_frames)],
             device=str(device),
             depth=7,
             col_names=(
@@ -634,6 +632,42 @@ def waveform_diagnostic_metrics(
     }
 
 
+def rms_embedding_metrics(
+        rms_diag: RMSEnvelopeEmbeddingOutput | None
+) -> dict[str, float]:
+    metrics = {}
+
+    if rms_diag is not None:
+        metrics.update({
+            "rms_embedding/activity_mean": float(
+                rms_diag.activity_mean.detach().cpu()
+            ),
+            "rms_embedding/silence_fraction": float(
+                rms_diag.silence_fraction.detach().cpu()
+            ),
+            "rms_embedding/embedding_mean": float(
+                rms_diag.embedding_mean.detach().cpu()
+            ),
+            "rms_embedding/embedding_rms": float(
+                rms_diag.embedding_rms.detach().cpu()
+            ),
+            "rms_embedding/embedding_max_abs": float(
+                rms_diag.embedding_max_abs.detach().cpu()
+            ),
+            "rms_embedding/to_cqt_ratio": float(
+                rms_diag.to_cqt_ratio.detach().cpu()
+            ),
+            "rms_embedding/layer_scale_mean_abs": float(
+                rms_diag.layer_scale_mean_abs.detach().cpu()
+            ),
+            "rms_embedding/layer_scale_max_abs": float(
+                rms_diag.layer_scale_max_abs.detach().cpu()
+            ),
+        })
+
+    return metrics
+
+
 def collect_generator_output_parameter_metrics(
     generator: nn.Module,
 ) -> dict[str, float]:
@@ -698,5 +732,254 @@ def collect_generator_output_parameter_metrics(
         })
 
     return metrics
+
+
+SAMPLING_MODES = (
+    "random",
+    "active_to_silent",
+    "silent_to_active",
+    "silence_rich",
+)
+
+
+def sampling_metrics(
+    microbatches: Sequence[
+        dict[str, Any]
+    ],
+) -> dict[str, float]:
+    """
+    Aggregate dataset-sampling diagnostics over every
+    microbatch used in one optimizer update.
+
+    Metrics are weighted by samples, not by microbatches.
+    This matters if the final accumulation window contains
+    a smaller microbatch.
+    """
+    if not microbatches:
+        return {}
+
+    requested_counts = {
+        mode: 0
+        for mode in SAMPLING_MODES
+    }
+
+    realized_counts = {
+        mode: 0
+        for mode in SAMPLING_MODES
+    }
+
+    unknown_requested = 0
+    unknown_realized = 0
+
+    total_samples = 0
+    fallback_sum = 0.0
+    silence_fraction_sum = 0.0
+
+    for batch_index, batch in enumerate(
+        microbatches
+    ):
+        realized_modes = _string_batch_values(
+            batch.get(
+                "sampling_mode"
+            ),
+            name="sampling_mode",
+            batch_index=batch_index,
+        )
+
+        requested_modes = _string_batch_values(
+            batch.get(
+                "sampling_requested_mode"
+            ),
+            name="sampling_requested_mode",
+            batch_index=batch_index,
+        )
+
+        if (
+            len(realized_modes)
+            != len(requested_modes)
+        ):
+            raise RuntimeError(
+                "Sampling mode batch lengths differ "
+                f"in microbatch {batch_index}: "
+                f"realized={len(realized_modes)}, "
+                f"requested={len(requested_modes)}."
+            )
+
+        batch_size = len(
+            realized_modes
+        )
+
+        if batch_size == 0:
+            continue
+
+        fallback = _numeric_batch_values(
+            batch.get(
+                "sampling_fallback"
+            ),
+            expected_size=batch_size,
+            name="sampling_fallback",
+            batch_index=batch_index,
+        )
+
+        silence_fraction = (
+            _numeric_batch_values(
+                batch.get(
+                    "silence_fraction"
+                ),
+                expected_size=batch_size,
+                name="silence_fraction",
+                batch_index=batch_index,
+            )
+        )
+
+        total_samples += batch_size
+
+        fallback_sum += float(
+            fallback.sum().detach().cpu()
+        )
+
+        silence_fraction_sum += float(
+            silence_fraction.sum().detach().cpu()
+        )
+
+        for mode in requested_modes:
+            if mode in requested_counts:
+                requested_counts[
+                    mode
+                ] += 1
+            else:
+                unknown_requested += 1
+
+        for mode in realized_modes:
+            if mode in realized_counts:
+                realized_counts[
+                    mode
+                ] += 1
+            else:
+                unknown_realized += 1
+
+    if total_samples == 0:
+        return {}
+
+    denominator = float(
+        total_samples
+    )
+
+    metrics = {
+        "sampling/sample_count": (
+            denominator
+        ),
+        "sampling/fallback_fraction": (
+            fallback_sum
+            / denominator
+        ),
+        "sampling/silence_fraction_mean": (
+            silence_fraction_sum
+            / denominator
+        ),
+        "sampling/unknown_requested_fraction": (
+            unknown_requested
+            / denominator
+        ),
+        "sampling/unknown_realized_fraction": (
+            unknown_realized
+            / denominator
+        ),
+    }
+
+    for mode in SAMPLING_MODES:
+        metrics[
+            "sampling/requested_"
+            f"{mode}_fraction"
+        ] = (
+            requested_counts[mode]
+            / denominator
+        )
+
+        metrics[
+            "sampling/realized_"
+            f"{mode}_fraction"
+        ] = (
+            realized_counts[mode]
+            / denominator
+        )
+
+    return metrics
+
+
+def _string_batch_values(
+    value: Any,
+    *,
+    name: str,
+    batch_index: int,
+) -> list[str]:
+    if value is None:
+        raise KeyError(
+            f"Microbatch {batch_index} is "
+            f"missing {name!r}."
+        )
+
+    if isinstance(
+        value,
+        str,
+    ):
+        return [value]
+
+    if isinstance(
+        value,
+        Sequence,
+    ):
+        return [
+            str(item)
+            for item in value
+        ]
+
+    raise TypeError(
+        f"Expected {name} to be a string "
+        "or sequence of strings in "
+        f"microbatch {batch_index}, got "
+        f"{type(value).__name__}."
+    )
+
+
+def _numeric_batch_values(
+    value: Any,
+    *,
+    expected_size: int,
+    name: str,
+    batch_index: int,
+) -> torch.Tensor:
+    if value is None:
+        raise KeyError(
+            f"Microbatch {batch_index} is "
+            f"missing {name!r}."
+        )
+
+    tensor = torch.as_tensor(
+        value,
+        dtype=torch.float32,
+    ).reshape(-1)
+
+    if tensor.numel() == 1:
+        tensor = tensor.repeat(
+            expected_size
+        )
+
+    if tensor.numel() != expected_size:
+        raise RuntimeError(
+            f"{name} has {tensor.numel()} values "
+            f"in microbatch {batch_index}, "
+            f"expected {expected_size}."
+        )
+
+    if not bool(
+        torch.isfinite(tensor).all()
+    ):
+        raise FloatingPointError(
+            f"{name} contains non-finite "
+            f"values in microbatch {batch_index}."
+        )
+
+    return tensor
 
 

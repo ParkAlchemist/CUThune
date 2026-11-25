@@ -7,7 +7,7 @@ from vocoder.src.nes_vocoder.training.builders import (
 )
 from vocoder.src.nes_vocoder.training.checkpointing import unwrap_compiled_module
 from vocoder.src.nes_vocoder.training.context import TrainingRuntime
-from vocoder.src.nes_vocoder.training.data import build_dataloaders, collect_overfit_batches, save_overfit_debug_data
+from vocoder.src.nes_vocoder.training.data import build_vocoder_dataloaders, collect_overfit_batches, save_overfit_debug_data
 from vocoder.src.nes_vocoder.training.logging import (
     write_model_manifest,
     write_model_structure,
@@ -25,13 +25,10 @@ def build_training_runtime(
     paths = build_run_paths(config)
     create_run_directories(paths)
 
-    train_loader, preview_loader = build_dataloaders(
-        config,
-        device,
-    )
+    data_loaders = build_vocoder_dataloaders(config, split_manifest_path = paths.run_dir / "dataset_split.json")
 
     overfit_batches = collect_overfit_batches(
-        train_loader,
+        data_loaders.train,
         config.training.overfit_batches,
     )
 
@@ -126,8 +123,8 @@ def build_training_runtime(
         device=device,
         paths=paths,
         components=components,
-        train_loader=train_loader,
-        preview_loader=preview_loader,
+        train_loader=data_loaders.train,
+        validation_loader=data_loaders.validation,
         overfit_batches=overfit_batches,
         writer=writer,
         stop_controller=stop_controller,

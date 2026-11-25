@@ -300,6 +300,7 @@ ROOT_SECTIONS = {
     "augmentation",
     "logging",
     "control",
+    "validation",
 }
 
 

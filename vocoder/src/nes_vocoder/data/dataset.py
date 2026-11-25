@@ -16,7 +16,7 @@ from torch.utils.data import Dataset
 
 from shared.src.chiptune_shared.cqt.cache import discover_cache_records
 from shared.src.chiptune_shared.cqt.features import load_audio
-
+from vocoder.src.nes_vocoder.config.schema import VocoderWindowSamplingConfig
 
 EXPECTED_CACHE_VERSION = 4
 
@@ -28,53 +28,6 @@ class WindowCandidates:
     silent_to_active: torch.Tensor
     # Actual valid window starts.
     silence_rich_starts: torch.Tensor
-
-
-@dataclass(frozen=True)
-class VocoderWindowSamplingConfig:
-    random_probability: float = 0.60
-    active_to_silent_probability: float = 0.15
-    silent_to_active_probability: float = 0.15
-    silence_rich_probability: float = 0.10
-
-    silence_rms_threshold: float = 3e-3
-    silence_rich_fraction: float = 0.40
-    boundary_jitter_frames: int = 16
-    minimum_state_frames: int = 4
-
-    def validate(self) -> None:
-        probabilities = (
-            self.random_probability,
-            self.active_to_silent_probability,
-            self.silent_to_active_probability,
-            self.silence_rich_probability,
-        )
-
-        if any(not math.isfinite(value) for value in probabilities):
-            raise ValueError("Sampling probabilities must be finite.")
-
-        if any(value < 0.0 for value in probabilities):
-            raise ValueError("Sampling probabilities must be non-negative.")
-
-        total = sum(probabilities)
-        if abs(total - 1.0) > 1e-6:
-            raise ValueError(
-                "Sampling probabilities must sum to one, "
-                f"got {total}."
-            )
-
-        if not math.isfinite(self.silence_rms_threshold):
-            raise ValueError("silence_rms_threshold must be finite.")
-        if self.silence_rms_threshold <= 0.0:
-            raise ValueError("silence_rms_threshold must be positive.")
-        if not 0.0 <= self.silence_rich_fraction <= 1.0:
-            raise ValueError(
-                "silence_rich_fraction must lie between zero and one."
-            )
-        if self.boundary_jitter_frames < 0:
-            raise ValueError("boundary_jitter_frames must be non-negative.")
-        if self.minimum_state_frames <= 0:
-            raise ValueError("minimum_state_frames must be positive.")
 
 
 class TensorLRUCache:

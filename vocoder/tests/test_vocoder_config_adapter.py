@@ -71,7 +71,8 @@ def test_high_resolution_adapted_generator_shape():
     model = CQTUHiFiGANGenerator(experiment.data.cqt_bins, model_config)
 
     cqt = torch.randn(1, 216, 8)
-    waveform = model(cqt)
+    rms = torch.randn(1, 1, 8)
+    waveform = model(cqt, rms)
 
     assert waveform.shape == (1, 1, 8 * 256)
     assert torch.isfinite(waveform).all()

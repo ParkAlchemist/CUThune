@@ -1,14 +1,21 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import torch
 from torch.utils.data import DataLoader
 
-from vocoder.src.nes_vocoder.config.schema import VocoderExperimentConfig
-from vocoder.src.nes_vocoder.data.dataset import CQTVocoderDataset
+from vocoder.src.nes_vocoder.config.schema import VocoderExperimentConfig, VocoderWindowSamplingConfig
+from vocoder.src.nes_vocoder.data.dataset import build_vocoder_datasets
+
+
+@dataclass(frozen=True)
+class VocoderDataLoaders:
+    train: DataLoader
+    validation: DataLoader
 
 
 def build_loader_kwargs(
@@ -38,62 +45,130 @@ def build_loader_kwargs(
     return kwargs
 
 
-def build_dataloaders(
+def build_vocoder_dataloaders(
     config: VocoderExperimentConfig,
-    device: torch.device,
-) -> tuple[DataLoader, DataLoader]:
-    print("Building datasets...")
-
-    data = config.data
-
-    train_dataset = CQTVocoderDataset(
-        chip_cache_root=Path(data.chip_cache_root),
-        sample_rate=data.sample_rate,
-        hop_length=data.hop_length,
-        segment_frames=data.segment_frames,
-        windows_per_track=data.windows_per_track,
-        random_window=data.random_window,
-        cache_waveforms=data.cache_waveforms,
-    )
-
-    preview_dataset = CQTVocoderDataset(
-        chip_cache_root=Path(data.chip_cache_root),
-        sample_rate=data.sample_rate,
-        hop_length=data.hop_length,
-        segment_frames=data.segment_frames,
-        windows_per_track=1,
-        random_window=False,
-        cache_waveforms=data.cache_waveforms,
-    )
-
-    pin_memory = (
-        data.pin_memory
-        and device.type == "cuda"
-    )
-
-    train_loader = DataLoader(
-        **build_loader_kwargs(
-            dataset=train_dataset,
-            batch_size=data.batch_size,
-            shuffle=True,
-            num_workers=data.num_workers,
-            drop_last=data.drop_last,
-            pin_memory=pin_memory,
-            persistent_workers=data.persistent_workers,
-            prefetch_factor=data.prefetch_factor,
+    *,
+    split_manifest_path: Path,
+) -> VocoderDataLoaders:
+    sampling = (
+        VocoderWindowSamplingConfig(
+            random_probability=(
+                config.data.sampling
+                .random_probability
+            ),
+            active_to_silent_probability=(
+                config.data.sampling
+                .active_to_silent_probability
+            ),
+            silent_to_active_probability=(
+                config.data.sampling
+                .silent_to_active_probability
+            ),
+            silence_rich_probability=(
+                config.data.sampling
+                .silence_rich_probability
+            ),
+            silence_rms_threshold=(
+                config.data.sampling
+                .silence_rms_threshold
+            ),
+            silence_rich_fraction=(
+                config.data.sampling
+                .silence_rich_fraction
+            ),
+            boundary_jitter_frames=(
+                config.data.sampling
+                .boundary_jitter_frames
+            ),
+            minimum_state_frames=(
+                config.data.sampling
+                .minimum_state_frames
+            ),
         )
     )
 
-    preview_loader = DataLoader(
-        preview_dataset,
-        batch_size=1,
-        shuffle=False,
-        num_workers=0,
-        drop_last=False,
-        pin_memory=pin_memory,
+    (
+        train_dataset,
+        validation_dataset,
+    ) = build_vocoder_datasets(
+        chip_cache_root=Path(
+            config.data.chip_cache_root
+        ),
+        sample_rate=(
+            config.data.sample_rate
+        ),
+        hop_length=(
+            config.data.hop_length
+        ),
+        segment_frames=(
+            config.data.segment_frames
+        ),
+        train_windows_per_track=(
+            config.data
+            .train_windows_per_track
+        ),
+        validation_windows_per_track=(
+            config.data
+            .validation_windows_per_track
+        ),
+        validation_fraction=(
+            config.data.validation_fraction
+        ),
+        split_seed=(
+            config.data.split_seed
+        ),
+        cache_waveforms=(
+            config.data.cache_waveforms
+        ),
+        sampling=sampling,
+        split_manifest_path=(
+            split_manifest_path
+        ),
     )
 
-    return train_loader, preview_loader
+    loader_arguments = {
+        "num_workers": (
+            config.data.num_workers
+        ),
+        "pin_memory": (
+            config.data.pin_memory
+        ),
+        "persistent_workers": (
+            config.data.persistent_workers
+            and config.data.num_workers > 0
+        ),
+    }
+
+    if config.data.num_workers > 0:
+        loader_arguments[
+            "prefetch_factor"
+        ] = config.data.prefetch_factor
+
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=(
+            config.data.batch_size
+        ),
+        shuffle=True,
+        drop_last=True,
+        **loader_arguments,
+    )
+
+    validation_loader = DataLoader(
+        validation_dataset,
+        batch_size=(
+            config.data
+            .validation_batch_size
+        ),
+        shuffle=False,
+        drop_last=False,
+        **loader_arguments,
+    )
+
+    return VocoderDataLoaders(
+        train=train_loader,
+        validation=validation_loader,
+    )
 
 
 def collect_overfit_batches(

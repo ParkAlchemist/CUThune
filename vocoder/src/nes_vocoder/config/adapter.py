@@ -33,7 +33,6 @@ def build_generator_config(
         eca=source.eca,
         context=source.context,
         rms_embedding=source.rms_embedding,
-        freeze_output_bias=source.freeze_output_bias,
     )
 
 

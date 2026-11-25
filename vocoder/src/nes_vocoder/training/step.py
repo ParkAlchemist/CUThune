@@ -10,7 +10,7 @@ from vocoder.src.nes_vocoder.losses.objective import VocoderLossBundle, compute_
     family_balanced_discriminator_loss, discriminator_family_losses
 from vocoder.src.nes_vocoder.training.logging import (
     discriminator_branch_metrics,
-    discriminator_health_metrics, waveform_diagnostic_metrics,
+    discriminator_health_metrics, waveform_diagnostic_metrics, rms_embedding_metrics,
 )
 from vocoder.src.nes_vocoder.models.generator import GeneratorForwardOutput
 
@@ -75,6 +75,7 @@ def vocoder_train_micro_step(
     discriminator = models.discriminator
 
     cqt = batch["cqt"].to(device, non_blocking=True)
+    rms_envelope = batch["rms_envelope"].to(device, non_blocking=True)
     real_audio = batch["audio"].to(device, non_blocking=True)
 
     autocast_dtype = {"float16": torch.float16, "float32": torch.float32, "bfloat16": torch.bfloat16}[dtype]
@@ -89,7 +90,7 @@ def vocoder_train_micro_step(
         dtype=autocast_dtype,
     ):
         with torch.no_grad():
-            fake_audio_for_d = generator(cqt)
+            fake_audio_for_d = generator(cqt, rms_envelope)
 
         discriminator_outputs_d = discriminator(
             real_audio.float(),
@@ -141,13 +142,14 @@ def vocoder_train_micro_step(
             enabled=autocast_enabled,
             dtype=autocast_dtype,
         ):
-            generator_output = generator(cqt, return_diagnostics=True)
+            generator_output = generator(cqt, rms_envelope, return_diagnostics=True)
 
             if not isinstance(generator_output, GeneratorForwardOutput):
                 raise RuntimeError("Generator diagnostic forward did not return a GeneratorForwardOutput")
 
             fake_audio_for_g = generator_output.audio
             pre_tanh_for_g = generator_output.pre_tanh
+            rms_diag = generator_output.rms_embedding
 
             discriminator_outputs_g = discriminator(
                 real_audio.float(),
@@ -201,6 +203,12 @@ def vocoder_train_micro_step(
             target=real_audio,
             silence_window_size=256,
             silence_rms_threshold=1e-3,
+        )
+    )
+
+    losses.update(
+        rms_embedding_metrics(
+            rms_diag=rms_diag,
         )
     )
 

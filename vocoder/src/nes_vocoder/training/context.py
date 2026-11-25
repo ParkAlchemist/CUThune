@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 import torch
+from torch.utils.data import DataLoader
 
 from vocoder.src.nes_vocoder.config.schema import VocoderExperimentConfig
 from vocoder.src.nes_vocoder.losses.objective import VocoderLossBundle
@@ -58,8 +59,8 @@ class TrainingRuntime:
     device: torch.device
     paths: RunPaths
     components: TrainingComponents
-    train_loader: Any
-    preview_loader: Any
+    train_loader: DataLoader
+    validation_loader: DataLoader
     overfit_batches: list[dict] | None
     writer: Any
     stop_controller: Any

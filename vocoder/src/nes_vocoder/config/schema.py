@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -296,26 +297,83 @@ class VocoderLossCalibrationConfig:
     output_filename: str = "loss_calibration.json"
 
 
+@dataclass(frozen=True)
+class VocoderWindowSamplingConfig:
+    random_probability: float = 0.60
+    active_to_silent_probability: float = 0.15
+    silent_to_active_probability: float = 0.15
+    silence_rich_probability: float = 0.10
+
+    silence_rms_threshold: float = 3e-3
+    silence_rich_fraction: float = 0.40
+    boundary_jitter_frames: int = 16
+    minimum_state_frames: int = 4
+
+    def validate(self) -> None:
+        probabilities = (
+            self.random_probability,
+            self.active_to_silent_probability,
+            self.silent_to_active_probability,
+            self.silence_rich_probability,
+        )
+
+        if any(not math.isfinite(value) for value in probabilities):
+            raise ValueError("Sampling probabilities must be finite.")
+
+        if any(value < 0.0 for value in probabilities):
+            raise ValueError("Sampling probabilities must be non-negative.")
+
+        total = sum(probabilities)
+        if abs(total - 1.0) > 1e-6:
+            raise ValueError(
+                "Sampling probabilities must sum to one, "
+                f"got {total}."
+            )
+
+        if not math.isfinite(self.silence_rms_threshold):
+            raise ValueError("silence_rms_threshold must be finite.")
+        if self.silence_rms_threshold <= 0.0:
+            raise ValueError("silence_rms_threshold must be positive.")
+        if not 0.0 <= self.silence_rich_fraction <= 1.0:
+            raise ValueError(
+                "silence_rich_fraction must lie between zero and one."
+            )
+        if self.boundary_jitter_frames < 0:
+            raise ValueError("boundary_jitter_frames must be non-negative.")
+        if self.minimum_state_frames <= 0:
+            raise ValueError("minimum_state_frames must be positive.")
+
+
 @dataclass
 class VocoderDataConfig:
     chip_cache_root: str = ""
-    sample_rate: int = 22050
-    hop_length: int = 512
-    cqt_bins: int = 96
+
+    sample_rate: int = 44100
+    hop_length: int = 256
+    cqt_bins: int = 116
     bins_per_octave: int = 12
-    fmin: float = 32.70319566
+    fmin: float = 27.5
 
-    segment_frames: int = 32
-    windows_per_track: int = 8
-    batch_size: int = 2
-    num_workers: int = 1
-    cache_waveforms: int = 8
+    segment_frames: int = 128
 
-    pin_memory: bool = True
+    train_windows_per_track: int = 8
+    validation_windows_per_track: int = 5
+
+    validation_fraction: float = 0.10
+    split_seed: int = 1337
+
+    batch_size: int = 8
+    validation_batch_size: int = 8
+
+    num_workers: int = 4
     persistent_workers: bool = True
     prefetch_factor: int = 2
-    random_window: bool = True
-    drop_last: bool = True
+    pin_memory: bool = True
+
+    cache_waveforms: int = 4
+    cache_candidates: int = 256
+
+    sampling: VocoderWindowSamplingConfig = field(default_factory=VocoderWindowSamplingConfig)
 
 
 @dataclass
@@ -402,7 +460,7 @@ class VocoderGeneratorModelConfig:
     activation: ActivationType = "snake_beta"
     upsample_initial_channel: int = 128
 
-    upsample_rates: tuple[int, ...] = (8, 8, 4, 2)
+    upsample_rates: tuple[int, ...] = (8, 4, 4, 2)
     upsample_kernel_sizes: tuple[int, ...] = (16, 16, 8, 4)
 
     resblock_kernel_sizes: tuple[int, ...] = (3, 7, 11)
@@ -421,7 +479,6 @@ class VocoderGeneratorModelConfig:
     eca: ECAConfig = field(default_factory=ECAConfig)
     context: ContextTrunkConfig = field(default_factory=ContextTrunkConfig)
     rms_embedding: RMSEmbeddingConfig = field(default_factory=RMSEmbeddingConfig)
-    freeze_output_bias: bool = False
 
 
 @dataclass
@@ -522,6 +579,13 @@ class VocoderDiscriminatorConfig:
 
 
 @dataclass
+class ValidationConfig:
+    enabled: bool = True
+    every_steps: int = 5000
+    max_batches: int = 100
+
+
+@dataclass
 class VocoderExperimentConfig:
     schema_version: int = 1
 
@@ -557,6 +621,13 @@ class VocoderExperimentConfig:
     control: ControlConfig = field(
         default_factory=ControlConfig
     )
-    amp: AMPConfig = field(default_factory=AMPConfig)
-    logging: LogConfig = field(default_factory=LogConfig)
+    amp: AMPConfig = field(
+        default_factory=AMPConfig
+    )
+    logging: LogConfig = field(
+        default_factory=LogConfig
+    )
+    validation: ValidationConfig = field(
+        default_factory=ValidationConfig
+    )
 

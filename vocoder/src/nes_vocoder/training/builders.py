@@ -16,7 +16,6 @@ from vocoder.src.nes_vocoder.models.discriminators import (
 from vocoder.src.nes_vocoder.models.generator import (
     CQTUHiFiGANGenerator,
 )
-from vocoder.src.nes_vocoder.training.checkpointing import unwrap_compiled_module
 from vocoder.src.nes_vocoder.training.step import (
     VocoderModels,
     VocoderOptimizers,
@@ -128,6 +127,18 @@ def build_training_components(
         config.generator,
     ).to(device)
 
+    if config.generator.rms_embedding.enabled:
+        rms_parameters = [
+            parameter
+            for name, parameter in generator.named_parameters()
+            if name.startswith("rms_embedding.")
+        ]
+        if not rms_parameters:
+            raise RuntimeError(
+                "RMS embedding is enabled but the generator exposes no "
+                "rms_embedding parameters."
+            )
+
     discriminator = HiFiGANMultiDiscriminator(
         config.discriminator,
     ).to(device)
@@ -200,46 +211,4 @@ def build_training_components(
         loss_bundle=loss_bundle,
         scaler=scaler,
     )
-
-def freeze_generator_output_bias(
-    *,
-    generator: torch.nn.Module,
-    optimizer: torch.optim.Optimizer,
-    value: float = 0.0,
-) -> None:
-    conv_post = getattr(
-        unwrap_compiled_module(generator),
-        "conv_post",
-        None,
-    )
-
-    if conv_post is None:
-        raise AttributeError(
-            "Generator has no conv_post module."
-        )
-
-    bias = getattr(
-        conv_post,
-        "bias",
-        None,
-    )
-
-    if bias is None:
-        raise RuntimeError(
-            "Generator conv_post has no bias."
-        )
-
-    with torch.no_grad():
-        bias.fill_(value)
-
-    bias.requires_grad_(False)
-
-    # Remove stale Adam/AdamW first and second moments.
-    # The parameter remains in the optimizer group to
-    # preserve checkpoint optimizer-group compatibility.
-    optimizer.state.pop(
-        bias,
-        None,
-    )
-
 

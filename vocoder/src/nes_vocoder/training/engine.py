@@ -13,13 +13,14 @@ from vocoder.src.nes_vocoder.training.checkpointing import save_checkpoint, prun
 from vocoder.src.nes_vocoder.training.context import TrainingComponents, TrainingState
 from vocoder.src.nes_vocoder.training.logging import (
     collect_context_parameter_metrics,
-    write_status, collect_generator_output_parameter_metrics, )
+    write_status, collect_generator_output_parameter_metrics, sampling_metrics, )
 from vocoder.src.nes_vocoder.training.metrics import split_logging_metrics, log_interval_maxima
 from vocoder.src.nes_vocoder.training.preview import export_preview_wavs
 from vocoder.src.nes_vocoder.training.runtime import derive_training_seed, set_seed
 from vocoder.src.nes_vocoder.training.schedulers import step_vocoder_schedulers, get_vocoder_learning_rates
 from vocoder.src.nes_vocoder.training.step import zero_vocoder_gradients, vocoder_train_micro_step, \
     finish_vocoder_optimizer_step
+from vocoder.src.nes_vocoder.training.validation import run_validation
 
 
 @dataclass
@@ -297,6 +298,12 @@ def run_epoch(
                 )
             )
 
+            step_metrics.update(
+                sampling_metrics(
+                    microbatches
+                )
+            )
+
             averaged_metrics, latest_metrics = split_logging_metrics(step_metrics)
 
             runtime.metric_accumulator.update(averaged_metrics)
@@ -327,6 +334,17 @@ def run_epoch(
 
         losses = update.losses
         step = state.global_step
+
+        if (
+                runtime.config.validation.enabled
+                and state.global_step > 0
+                and state.global_step % runtime.config.validation.every_steps == 0
+        ):
+            run_validation(
+                runtime=runtime,
+                state=state,
+                max_batches=runtime.config.validation.max_batches,
+            )
 
         if (
                 runtime.writer is not None
@@ -396,7 +414,7 @@ def run_epoch(
             preview_batches = (
                 runtime.overfit_batches
                 if runtime.overfit_batches is not None
-                else runtime.preview_loader
+                else runtime.validation_loader
             )
 
             export_preview_wavs(
@@ -510,6 +528,16 @@ def run_training(
     print(
         "Segment samples: "
         f"{config.data.segment_frames * config.data.hop_length}"
+    )
+
+    print(f"Validation batches: {len(runtime.validation_loader)}")
+    print(
+        "RMS embedding: "
+        f"enabled={runtime.config.generator.rms_embedding.enabled}, "
+        f"hidden={runtime.config.generator.rms_embedding.hidden_channels}, "
+        f"kernel={runtime.config.generator.rms_embedding.kernel_size}, "
+        "gate="
+        f"{runtime.config.generator.rms_embedding.layer_scale_initial}"
     )
 
     first_epoch = state.epoch

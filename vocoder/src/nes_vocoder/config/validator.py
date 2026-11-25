@@ -93,8 +93,8 @@ def _validate_data_config(
         errors=errors,
     )
     _validate_positive_int(
-        data.windows_per_track,
-        path="data.windows_per_track",
+        data.train_windows_per_track,
+        path="data.train_windows_per_track",
         errors=errors,
     )
     _validate_positive_int(
@@ -383,6 +383,150 @@ def _validate_generator_config(
         context=config.generator.context,
         generator_channels=config.generator.upsample_initial_channel,
         errors=errors,
+    )
+
+    rms_embedding = generator.rms_embedding
+
+    if not rms_embedding.enabled:
+        errors.append(
+            "generator.rms_embedding.enabled "
+            "must be true for cache version 4."
+        )
+
+    if rms_embedding.enabled:
+        _validate_positive_int(
+            rms_embedding.hidden_channels,
+            path=(
+                "generator.rms_embedding."
+                "hidden_channels"
+            ),
+            errors=errors,
+        )
+
+        _validate_positive_int(
+            rms_embedding.kernel_size,
+            path=(
+                "generator.rms_embedding."
+                "kernel_size"
+            ),
+            errors=errors,
+        )
+
+        if rms_embedding.kernel_size % 2 == 0:
+            errors.append(
+                "generator.rms_embedding."
+                "kernel_size must be odd, got "
+                f"{rms_embedding.kernel_size}."
+            )
+
+        if rms_embedding.layer_scale_initial < 0.0:
+            errors.append(
+                "generator.rms_embedding."
+                "layer_scale_initial must be "
+                "non-negative, got "
+                f"{rms_embedding.layer_scale_initial}."
+            )
+
+    _validate_positive_int(
+        data.train_windows_per_track,
+        path=(
+            "data.train_windows_per_track"
+        ),
+        errors=errors,
+    )
+
+    _validate_positive_int(
+        data.validation_windows_per_track,
+        path=(
+            "data.validation_windows_per_track"
+        ),
+        errors=errors,
+    )
+
+    _validate_positive_int(
+        data.validation_batch_size,
+        path=(
+            "data.validation_batch_size"
+        ),
+        errors=errors,
+    )
+
+    _validate_probability(
+        data.validation_fraction,
+        path="data.validation_fraction",
+        errors=errors,
+    )
+
+    if not (0.0 < data.validation_fraction < 1.0):
+        errors.append(
+            "data.validation_fraction must lie "
+            "strictly between 0 and 1."
+        )
+
+    sampling = data.sampling
+
+    probabilities = (
+        sampling.random_probability,
+        sampling.active_to_silent_probability,
+        sampling.silent_to_active_probability,
+        sampling.silence_rich_probability,
+    )
+
+    if any(probability < 0.0 for probability in probabilities):
+        errors.append(
+            "All data.sampling probabilities "
+            "must be non-negative."
+        )
+
+    probability_sum = sum(probabilities)
+
+    if abs(probability_sum - 1.0) > 1e-6:
+        errors.append(
+            "data.sampling probabilities must "
+            "sum to 1.0, got "
+            f"{probability_sum}."
+        )
+
+    if sampling.silence_rms_threshold <= 0.0:
+        errors.append(
+            "data.sampling."
+            "silence_rms_threshold must be "
+            "positive."
+        )
+
+    _validate_probability(
+        sampling.silence_rich_fraction,
+        path=(
+            "data.sampling."
+            "silence_rich_fraction"
+        ),
+        errors=errors,
+    )
+
+    _validate_positive_int(
+        sampling.boundary_jitter_frames,
+        path=(
+            "data.sampling."
+            "boundary_jitter_frames"
+        ),
+        errors=errors,
+        allow_zero=True,
+    )
+
+    _validate_positive_int(
+        sampling.minimum_state_frames,
+        path=(
+            "data.sampling."
+            "minimum_state_frames"
+        ),
+        errors=errors,
+    )
+
+    _validate_positive_int(
+        data.cache_candidates,
+        path="data.cache_candidates",
+        errors=errors,
+        allow_zero=True,
     )
 
 
@@ -1636,6 +1780,18 @@ def validate_vocoder_config(
         path="scheduler.discriminator",
         errors=errors,
     )
+
+    if config.validation.enabled:
+        _validate_positive_int(
+            config.validation.every_steps,
+            path="validation.every_steps",
+            errors=errors,
+        )
+        _validate_positive_int(
+            config.validation.max_batches,
+            path="validation.max_batches",
+            errors=errors,
+        )
 
     _validate_runtime_config(config, errors)
 

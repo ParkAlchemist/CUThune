@@ -263,7 +263,7 @@ def test_missing_fields_use_defaults(
     config = load_vocoder_config(path)
 
     assert config.run.experiment_name == "defaults_test"
-    assert config.data.sample_rate == 22050
+    assert config.data.sample_rate == 44100
     assert config.generator.upsample_initial_channel == 128
     assert config.training.gradient_accumulation_steps == 1
 

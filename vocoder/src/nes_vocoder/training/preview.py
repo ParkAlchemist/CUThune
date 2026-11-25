@@ -74,6 +74,14 @@ def export_preview_wavs(
                 device,
                 non_blocking=True,
             )
+            rms_envelope = batch["rms_envelope"].to(
+                device,
+                non_blocking=True,
+            )
+            rms_envelope_linear = batch["rms_envelope_linear"].to(
+                device,
+                non_blocking=True,
+            )
             real_audio = batch["audio"].to(
                 device,
                 non_blocking=True,
@@ -87,7 +95,7 @@ def export_preview_wavs(
                     and device.type == "cuda"
                 ),
             ):
-                fake_audio = generator(cqt)
+                fake_audio = generator(cqt, rms_envelope)
 
             batch_size = int(cqt.shape[0])
             source_paths = batch.get(
@@ -135,6 +143,23 @@ def export_preview_wavs(
                         ),
                         "sample_end": int(
                             batch["sample_end"][item_index]
+                        ),
+                        "sampling_mode": batch["sampling_mode"][item_index],
+                        "sampling_requested_mode": batch["sampling_requested_mode"][item_index],
+                        "sampling_fallback": float(
+                            batch["sampling_fallback"][item_index]
+                        ),
+                        "silence_fraction": float(
+                            batch["silence_fraction"][item_index]
+                        ),
+                        "rms_linear_mean": float(
+                            rms_envelope_linear[item_index].float().mean()
+                        ),
+                        "rms_conditioning_min": float(
+                            rms_envelope[item_index].detach().float().min().cpu()
+                        ),
+                        "rms_conditioning_max": float(
+                            rms_envelope[item_index].detach().float().max().cpu()
                         ),
                     },
                 )

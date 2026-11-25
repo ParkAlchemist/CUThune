@@ -11,6 +11,10 @@ AVERAGED_METRIC_PREFIXES = (
     "silence/",
     "grad_",
     "performance/",
+    "rms_embedding/",
+    "conditioning/",
+    "sampling/",
+    "validation/",
 )
 LATEST_METRIC_PREFIXES = (
     "learning_rate_",
@@ -33,6 +37,10 @@ CRITICAL_MAXIMUM_METRICS = (
     "tanh/negative_le_m099",
     "silence/output_negative_rail",
     "silence/output_rms",
+    "rms_embedding/to_cqt_ratio",
+    "rms_embedding/embedding_max_abs",
+    "rms_embedding/layer_scale_max_abs",
+    "conditioning/generated_rms_l1",
 )
 
 

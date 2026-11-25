@@ -4,10 +4,10 @@ from vocoder.src.nes_vocoder.config.schema import VocoderExperimentConfig
 def test_default_vocoder_experiment_config():
     config = VocoderExperimentConfig()
 
-    assert config.data.cqt_bins == 96
-    assert config.data.hop_length == 512
+    assert config.data.cqt_bins == 116
+    assert config.data.hop_length == 256
     assert config.generator.activation == "snake_beta"
-    assert config.generator.upsample_rates == (8, 8, 4, 2)
+    assert config.generator.upsample_rates == (8, 4, 4, 2)
     assert config.loss.mrstft.fft_sizes == (
         128,
         256,

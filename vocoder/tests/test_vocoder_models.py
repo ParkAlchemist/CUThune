@@ -17,8 +17,9 @@ def test_vocoder_generator_shape_32_frames_leaky_relu():
         )
     )
 
-    x = torch.randn(2, 96, 32)
-    y = model(x)
+    cqt = torch.randn(2, 96, 32)
+    rms = torch.randn(2, 1, 32)
+    y = model(cqt, rms)
 
     assert y.shape == (2, 1, 32 * 512)
     assert torch.isfinite(y).all()
@@ -29,12 +30,15 @@ def test_vocoder_generator_shape_32_frames_snake_beta():
         96,
         VocoderGeneratorModelConfig(
             upsample_initial_channel=128,
+            upsample_rates=(8, 8, 4, 2),
+            upsample_kernel_sizes=(16, 16, 8, 4),
             activation="snake_beta",
         )
     )
 
-    x = torch.randn(2, 96, 32)
-    y = model(x)
+    cqt = torch.randn(2, 96, 32)
+    rms = torch.randn(2, 1, 32)
+    y = model(cqt, rms)
 
     assert y.shape == (2, 1, 32 * 512)
     assert torch.isfinite(y).all()
@@ -48,8 +52,9 @@ def test_vocoder_generator_accepts_4d_cqt():
         )
     )
 
-    x = torch.randn(2, 1, 96, 16)
-    y = model(x)
+    cqt = torch.randn(2, 1, 96, 32)
+    rms = torch.randn(2, 1, 32)
+    y = model(cqt, rms)
 
     assert y.shape == (2, 1, 16 * 512)
     assert torch.isfinite(y).all()

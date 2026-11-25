@@ -46,6 +46,13 @@ def build_checkpoint_payload(
         ),
         "scaler": components.scaler.state_dict(),
         "experiment_config": asdict(config),
+        "model_contract": {
+            "cache_version": 4,
+            "uses_rms_envelope": True,
+            "rms_envelope_key": "frame_rms_normalized",
+            "rms_floor_db": -80.0,
+            "cqt_reference_mode": "dataset",
+        }
     }
 
     if components.scheduler_generator is not None:
@@ -119,6 +126,22 @@ def load_checkpoint(
         path,
         map_location=device,
     )
+
+    contract = checkpoint.get("model_contract")
+    if contract is None:
+        raise RuntimeError(
+            "Checkpoint lacks the v5 RMS-conditioned model contract. "
+            "Start a fresh experiment or load it with the matching v4 code."
+        )
+
+    if not bool(contract.get("uses_rms_envelope", False)):
+        raise RuntimeError("Checkpoint does not use RMS envelope conditioning.")
+
+    if int(contract.get("cache_version", -1)) != 4:
+        raise RuntimeError(
+            "Checkpoint/cache contract mismatch: expected cache version 4, "
+            f"got {contract.get('cache_version')}."
+        )
 
     unwrap_compiled_module(components.models.generator).load_state_dict(
         checkpoint["generator"],

@@ -78,7 +78,7 @@ def make_test_stft_resolution_output(
             1.0,
             device=device,
         ),
-        activity_mean=scalar_tensor(
+        relative_regime_weight=scalar_tensor(
             1.0,
             device=device,
         ),

@@ -47,16 +47,28 @@ class TinyVocoderGenerator(nn.Module):
             padding=1,
         )
 
+        self.rms_projection = nn.Conv1d(
+            1,
+            hidden_channels,
+            kernel_size=3,
+            padding=1,
+            bias=False,
+        )
+
         self.conv_out = nn.Conv1d(
             in_channels=hidden_channels,
             out_channels=1,
             kernel_size=3,
             padding=1,
+            bias=False,
         )
 
     def forward(
         self,
         cqt: torch.Tensor,
+        rms_envelope: torch.Tensor,
+        *,
+        return_diagnostics: bool = False,
     ) -> torch.Tensor:
         if cqt.ndim == 4:
             cqt = cqt[:, 0]
@@ -67,7 +79,8 @@ class TinyVocoderGenerator(nn.Module):
                 f"got {tuple(cqt.shape)}."
             )
 
-        x = self.conv_in(cqt)
+        activity = ((rms_envelope + 1.0) * 0.5).clamp(0.0, 1.0)
+        x = self.conv_in(cqt) + self.rms_projection(activity)
         x = F.leaky_relu(
             x,
             negative_slope=0.1,
@@ -349,6 +362,10 @@ def make_training_fixture(
     batch = {
         "cqt": cqt,
         "audio": audio,
+        "rms_envelope": torch.zeros(batch_size, 1, sequence_length),
+        "rms_envelope_linear": torch.full((batch_size, 1, sequence_length), 0.01),
+        "sampling_fallback": torch.zeros(batch_size),
+        "silence_fraction": torch.zeros(batch_size),
     }
 
     return VocoderTrainingFixture(

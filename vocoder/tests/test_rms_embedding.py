@@ -143,3 +143,43 @@ def test_generator_weight_norm_removal() -> None:
             )
 
 
+def test_silence_is_exactly_neutral_after_optimizer_update() -> None:
+    module = RMSEnvelopeEmbedding(
+        output_channels=32,
+        hidden_channels=8,
+        kernel_size=7,
+        layer_scale_initial=1e-3,
+        remap_to_activity=True,
+    )
+    optimizer = torch.optim.AdamW(module.parameters(), lr=1e-3)
+
+    active = torch.zeros(2, 1, 32)
+    output, _ = module(active)
+    output.square().mean().backward()
+    optimizer.step()
+
+    silence = torch.full((2, 1, 32), -1.0)
+    silence_output, _ = module(silence)
+    torch.testing.assert_close(
+        silence_output,
+        torch.zeros_like(silence_output),
+        rtol=0.0,
+        atol=1e-7,
+    )
+
+
+def test_embedding_receives_gradients() -> None:
+    module = RMSEnvelopeEmbedding(
+        output_channels=32,
+        hidden_channels=8,
+        kernel_size=7,
+    )
+    envelope = (
+        torch.rand(2, 1, 32) * 2.0 - 1.0
+    ).requires_grad_()
+    output, _ = module(envelope)
+    output.square().mean().backward()
+    assert envelope.grad is not None
+    assert torch.isfinite(envelope.grad).all()
+
+
